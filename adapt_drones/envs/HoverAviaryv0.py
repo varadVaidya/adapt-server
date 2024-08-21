@@ -262,6 +262,7 @@ class HoverAviaryv0(BaseAviary):
         _izz = self.np_random.uniform(_izz_avg - _izz_std, _izz_avg + _izz_std)
 
         inertia = np.array([_ixx, _iyy, _izz]).reshape(3)
+        self.model.body_inertia = inertia
 
         # com offset 5% of the arm length in xy and 2.5% in z
         com_offset = 0.05 * L
