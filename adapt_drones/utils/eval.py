@@ -98,6 +98,7 @@ def phase1_eval(cfg: Config, duration: int = 6, best_model: bool = True):
     position, velocity = [], []
 
     for i in range(len(t)):
+        env.unwrapped.target_position = ref_positon[i]
         action = agent.get_action_and_value(
             torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
         )[0]
