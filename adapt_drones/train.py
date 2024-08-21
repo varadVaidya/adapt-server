@@ -47,7 +47,7 @@ if cfg.experiment.track:
         sync_tensorboard=True,
         settings=wandb.Settings(_disable_stats=True),
     )
-
+    print("Wandb Initialized")
     cfg.run_name = run.name
     cfg.experiment.run_name = run.name
     commit = subprocess.check_output(["git", "log", "--format=%H", "-n", "1"])
@@ -55,6 +55,7 @@ if cfg.experiment.track:
     tag_name = "runs/" + cfg.experiment.grp_name + "/" + cfg.run_name
     run.notes = f"Commit: {commit.decode('utf-8')}\nBranch: {branch_name}"
 
+    print("Tagging the commit")
     # tag the commit with the tag_name
     subprocess.run(["git", "tag", tag_name])
     print("Commit: ", commit.decode("utf-8"))
