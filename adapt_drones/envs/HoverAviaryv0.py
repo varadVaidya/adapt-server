@@ -53,14 +53,11 @@ class HoverAviaryv0(BaseAviary):
     def _observation_space(self):
         """
         observation vector =
-        [delta_pos, delta_ori, delta_vel, delta_angular_vel] = # 12
-        For this environment, since the goal is to hover at a desired position,
-        the desired velocity and angular velocity are zero, with [1,0,0,0] as the
-        desired orientation.
+        [position,target_position, error_position, orientation, velocity, angular velocity] = # 19
         """
 
-        lower_bound = -np.inf * np.ones(12)
-        upper_bound = np.inf * np.ones(12)
+        lower_bound = -np.inf * np.ones(19)
+        upper_bound = np.inf * np.ones(19)
 
         return spaces.Box(low=lower_bound, high=upper_bound, dtype=np.float32)
 
@@ -89,10 +86,7 @@ class HoverAviaryv0(BaseAviary):
     def _compute_obs(self):
         """
         observation vector =
-        [delta_pos, delta_ori, delta_vel, delta_angular_vel] = # 12
-        For this environment, since the goal is to hover at a desired position,
-        the desired velocity and angular velocity are zero, with [1,0,0,0] as the
-        desired orientation.
+        [position, orientation, velocity, angular velocity] = # 13
         """
         delta_pos = self.target_position - self.position
         delta_vel = np.zeros(3) - self.velocity
@@ -102,9 +96,20 @@ class HoverAviaryv0(BaseAviary):
 
         delta_angular_vel = np.zeros(3) - self.angular_velocity
 
-        return np.hstack([delta_pos, delta_ori, delta_vel, delta_angular_vel]).astype(
-            np.float32
-        )
+        return np.hstack(
+            [
+                self.position,
+                self.target_position,
+                delta_pos,
+                self.quat,
+                self.velocity,
+                self.angular_velocity,
+            ]
+        ).astype(np.float32)
+
+        # return np.hstack([delta_pos, delta_ori, delta_vel, delta_angular_vel]).astype(
+        #     np.float32
+        # )
 
     def _compute_reward(self):
 
