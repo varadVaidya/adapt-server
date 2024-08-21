@@ -121,7 +121,7 @@ class HoverAviaryv0(BaseAviary):
             norm_velocity, bounds=(-isclose, isclose), margin=margin
         )
 
-        weights = np.array([0.7, 0.3])
+        weights = np.array([0.95, 0.05])
         reward_vector = np.array([distance_reward, velocity_reward])
         crash_reward = -100.0 if len(self.data.contact.dim) > 0 else 0.0
 
