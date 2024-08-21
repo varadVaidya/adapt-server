@@ -2,16 +2,28 @@ import os
 
 os.environ["MUJOCO_GL"] = "egl"
 
+from dataclasses import dataclass
 import numpy as np
 import gymnasium as gym
 from gymnasium.utils.env_checker import check_env
+
+import tyro
 
 import adapt_drones
 import adapt_drones.envs
 from adapt_drones.cfgs.config import *
 
+
+@dataclass
+class Args:
+    env_id: str
+    seed: int = 15092024
+
+
+args = tyro.cli(Args)
+
 cfg = Config()
-env = gym.make("hover_v0", cfg=cfg, record=True)
+env = gym.make(args.env_id, cfg=cfg, record=True)
 env = gym.wrappers.FlattenObservation(env)
 env = gym.wrappers.RecordEpisodeStatistics(env)
 
