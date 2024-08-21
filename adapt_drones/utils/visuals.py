@@ -7,12 +7,12 @@ def add_visual_capsule(
     scene: mujoco.MjvScene, point1, point2, radius, rgba: np.ndarray
 ):
 
-    if scene.ngeom >= scene.geoms.size:
+    if scene.ngeom >= scene.maxgeom:
         return
     scene.ngeom += 1
     mujoco.mjv_initGeom(
         scene.geoms[scene.ngeom - 1],
-        mujoco.mjtObj.GEOM_CAPSULE,
+        mujoco.mjtGeom.mjGEOM_CAPSULE,
         np.zeros(3),
         np.zeros(3),
         np.zeros(9),
@@ -20,7 +20,7 @@ def add_visual_capsule(
     )
     mujoco.mjv_makeConnector(
         scene.geoms[scene.ngeom - 1],
-        mujoco.mjtObj.GEOM_CAPSULE,
+        mujoco.mjtGeom.mjGEOM_CAPSULE,
         radius,
         point1[0],
         point1[1],
