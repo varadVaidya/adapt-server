@@ -8,6 +8,7 @@ import subprocess
 import numpy as np
 import torch
 import gymnasium as gym
+import tyro
 
 from adapt_drones.cfgs.config import *
 from adapt_drones.utils.learning import make_env
