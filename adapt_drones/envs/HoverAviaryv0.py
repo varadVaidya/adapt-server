@@ -149,7 +149,13 @@ class HoverAviaryv0(BaseAviary):
         far_away = np.linalg.norm(self.position) > 7.5
         crashed = len(self.data.contact.dim) > 0
 
-        return far_away or crashed
+        rot = np.zeros((9, 1))
+        mujoco.mju_quat2Mat(rot, self.quat)
+        euler = rotation.mat2euler(rot.reshape(3, 3))
+
+        tilt = abs(euler[0]) > np.pi / 4 or abs(euler[1]) > np.pi / 4
+
+        return far_away or crashed or tilt
 
     def _compute_info(self):
         self.info_pos_error += np.linalg.norm(self.target_position - self.position)
