@@ -56,8 +56,8 @@ class HoverAviaryv0(BaseAviary):
         [position,target_position, error_position, orientation, velocity, angular velocity] = # 19
         """
 
-        lower_bound = -np.inf * np.ones(19)
-        upper_bound = np.inf * np.ones(19)
+        lower_bound = -np.inf * np.ones(12)
+        upper_bound = np.inf * np.ones(12)
 
         return spaces.Box(low=lower_bound, high=upper_bound, dtype=np.float32)
 
@@ -96,20 +96,20 @@ class HoverAviaryv0(BaseAviary):
 
         delta_angular_vel = np.zeros(3) - self.angular_velocity
 
-        return np.hstack(
-            [
-                self.position,
-                self.target_position,
-                delta_pos,
-                self.quat,
-                self.velocity,
-                self.angular_velocity,
-            ]
-        ).astype(np.float32)
+        # return np.hstack(
+        #     [
+        #         self.position,
+        #         self.target_position,
+        #         delta_pos,
+        #         self.quat,
+        #         self.velocity,
+        #         self.angular_velocity,
+        #     ]
+        # ).astype(np.float32)
 
-        # return np.hstack([delta_pos, delta_ori, delta_vel, delta_angular_vel]).astype(
-        #     np.float32
-        # )
+        return np.hstack([delta_pos, delta_ori, delta_vel, delta_angular_vel]).astype(
+            np.float32
+        )
 
     def _compute_reward(self):
 
