@@ -21,11 +21,12 @@ check_git_clean()
 @dataclass
 class Args:
     env_id: str
+    scale: bool = True
     seed: int = 15092024
 
 
 args = tyro.cli(Args)
-cfg = Config(env_id=args.env_id, seed=args.seed, scale=False)
+cfg = Config(env_id=args.env_id, seed=args.seed, scale=args.scale)
 
 # set random seeds
 random.seed(cfg.seed)
