@@ -53,7 +53,10 @@ class HoverAviaryv0(BaseAviary):
     def _observation_space(self):
         """
         observation vector =
-        [position,target_position, error_position, orientation, velocity, angular velocity] = # 19
+        [delta_pos, delta_ori, delta_vel, delta_angular_vel] = # 12
+        For this environment, since the goal is to hover at a desired position,
+        the desired velocity and angular velocity are zero, with [1,0,0,0] as the
+        desired orientation.
         """
 
         lower_bound = -np.inf * np.ones(12)
@@ -71,7 +74,7 @@ class HoverAviaryv0(BaseAviary):
         # kinematics reset
         self._kinematics_reset()
         # dynamics reset
-        # self._dynamics_reset()
+        self._dynamics_reset()
 
         self.set_max_force_torque_limits()
 
@@ -86,7 +89,10 @@ class HoverAviaryv0(BaseAviary):
     def _compute_obs(self):
         """
         observation vector =
-        [position, orientation, velocity, angular velocity] = # 13
+        [delta_pos, delta_ori, delta_vel, delta_angular_vel] = # 12
+        For this environment, since the goal is to hover at a desired position,
+        the desired velocity and angular velocity are zero, with [1,0,0,0] as the
+        desired orientation.
         """
         delta_pos = self.target_position - self.position
         delta_vel = np.zeros(3) - self.velocity
@@ -95,17 +101,6 @@ class HoverAviaryv0(BaseAviary):
         mujoco.mju_subQuat(delta_ori, self.quat, np.array([1.0, 0.0, 0.0, 0.0]))
 
         delta_angular_vel = np.zeros(3) - self.angular_velocity
-
-        # return np.hstack(
-        #     [
-        #         self.position,
-        #         self.target_position,
-        #         delta_pos,
-        #         self.quat,
-        #         self.velocity,
-        #         self.angular_velocity,
-        #     ]
-        # ).astype(np.float32)
 
         return np.hstack([delta_pos, delta_ori, delta_vel, delta_angular_vel]).astype(
             np.float32
@@ -154,13 +149,7 @@ class HoverAviaryv0(BaseAviary):
         far_away = np.linalg.norm(self.position) > 7.5
         crashed = len(self.data.contact.dim) > 0
 
-        rot = np.zeros((9, 1))
-        mujoco.mju_quat2Mat(rot, self.quat)
-        euler = rotation.mat2euler(rot.reshape(3, 3))
-
-        tilt = abs(euler[0]) > np.pi / 4 or abs(euler[1]) > np.pi / 4
-
-        return far_away or crashed or tilt
+        return far_away or crashed
 
     def _compute_info(self):
         self.info_pos_error += np.linalg.norm(self.target_position - self.position)

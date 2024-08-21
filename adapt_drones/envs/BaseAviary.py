@@ -76,7 +76,7 @@ class BaseAviary(gym.Env):
         self.drone_id = self.data.body("quad").id
         self.com_site_id = mujoco.mj_name2id(self.model, 6, "thrust_com")
 
-        self.thrust2weight = 2.0
+        self.thrust2weight = 3.5
         self.prop_const = 0.014
         self.arm_length = 0.166
 
