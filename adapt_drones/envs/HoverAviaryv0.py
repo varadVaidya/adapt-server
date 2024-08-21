@@ -71,7 +71,7 @@ class HoverAviaryv0(BaseAviary):
         # kinematics reset
         self._kinematics_reset()
         # dynamics reset
-        self._dynamics_reset()
+        # self._dynamics_reset()
 
         self.set_max_force_torque_limits()
 
