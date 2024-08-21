@@ -127,8 +127,8 @@ class HoverAviaryv0(BaseAviary):
 
         reward = np.dot(weights, reward_vector) + crash_reward
 
-        self.info_reward["distance_reward"] = distance_reward
-        self.info_reward["velocity_reward"] = velocity_reward
+        self.info_reward["distance_reward"] += distance_reward
+        self.info_reward["velocity_reward"] += velocity_reward
 
         return np.float32(reward)
 
@@ -152,8 +152,8 @@ class HoverAviaryv0(BaseAviary):
         return far_away or crashed
 
     def _compute_info(self):
-        self.info_pos_error = np.linalg.norm(self.target_position - self.position)
-        self.info_vel_error = np.linalg.norm(self.velocity)
+        self.info_pos_error += np.linalg.norm(self.target_position - self.position)
+        self.info_vel_error += np.linalg.norm(self.velocity)
 
         error_dict = {
             "pos_error": self.info_pos_error,
