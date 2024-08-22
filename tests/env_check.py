@@ -22,7 +22,7 @@ class Args:
 
 args = tyro.cli(Args)
 
-cfg = Config()
+cfg = Config(env_id=args.env_id, seed=args.seed)
 env = gym.make(args.env_id, cfg=cfg, record=True)
 env = gym.wrappers.FlattenObservation(env)
 env = gym.wrappers.RecordEpisodeStatistics(env)

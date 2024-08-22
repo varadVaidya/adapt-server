@@ -22,6 +22,6 @@ class Args:
 args = tyro.cli(Args)
 
 
-cfg = Config()
+cfg = Config(env_id=args.env_id)
 env = gym.make(args.env_id, cfg=cfg, record=False)
 check_env(env.unwrapped, warn=True, skip_render_check=True)

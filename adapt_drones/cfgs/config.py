@@ -3,7 +3,7 @@ import warnings
 from dataclasses import dataclass
 
 from adapt_drones.cfgs.experiment_cfg import Experiment
-from adapt_drones.cfgs.environment_cfg import HoverAviaryv0Config
+from adapt_drones.cfgs.environment_cfg import *
 from adapt_drones.cfgs.scale_cfg import Scale
 from adapt_drones.cfgs.learning_cfg import Learning
 from adapt_drones.cfgs.network_cfg import Network
@@ -24,9 +24,7 @@ class Config:
 
     # sub dataclasses
     experiment: Experiment
-    environment: [
-        HoverAviaryv0Config,
-    ]
+    environment: [HoverAviaryv0Config, HoverAviaryv1Config]
     scale: Scale
     learning: Learning
     network: Network
@@ -80,11 +78,12 @@ class Config:
 
         env_maps = {
             "hover_v0": HoverAviaryv0Config,
+            "hover_v1": HoverAviaryv1Config,
         }
 
         try:
             self.environment = env_maps[env_id](eval=eval, scale=scale)
-            if agent != self.environment.agent_name:
+            if agent not in self.environment.agent_name:
                 raise ValueError("Provided agent does not match required agent")
         except KeyError:
             raise ValueError(f"Environment {env_id} not found in env_maps")
