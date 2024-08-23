@@ -24,7 +24,12 @@ class Config:
 
     # sub dataclasses
     experiment: Experiment
-    environment: [HoverAviaryv0Config, HoverAviaryv1Config]
+    environment: [
+        HoverAviaryv0Config,
+        HoverAviaryv1Config,
+        TrajAviaryv2Config,
+        TrajAviaryv3Config,
+    ]
     scale: Scale
     learning: Learning
     network: Network
@@ -79,6 +84,8 @@ class Config:
         env_maps = {
             "hover_v0": HoverAviaryv0Config,
             "hover_v1": HoverAviaryv1Config,
+            "traj_v2": TrajAviaryv2Config,
+            "traj_v3": TrajAviaryv3Config,
         }
 
         try:

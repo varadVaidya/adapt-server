@@ -23,10 +23,11 @@ class Args:
     env_id: str
     scale: bool = True
     seed: int = 15092024
+    agent: str = "RMA_DATT"
 
 
 args = tyro.cli(Args)
-cfg = Config(env_id=args.env_id, seed=args.seed, scale=args.scale)
+cfg = Config(env_id=args.env_id, seed=args.seed, scale=args.scale, agent=args.agent)
 
 # set random seeds
 random.seed(cfg.seed)

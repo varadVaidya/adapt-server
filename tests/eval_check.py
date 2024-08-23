@@ -22,10 +22,19 @@ class Args:
     env_id: str
     run_name: str
     seed: int = 15092024
+    agent: str = "RMA_DATT"
+    scale: bool = True
 
 
 args = tyro.cli(Args)
-cfg = Config(env_id=args.env_id, seed=args.seed, eval=True, run_name=args.run_name)
+cfg = Config(
+    env_id=args.env_id,
+    seed=args.seed,
+    eval=True,
+    run_name=args.run_name,
+    agent=args.agent,
+    scale=args.scale,
+)
 
 current_branch_name = (
     subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])

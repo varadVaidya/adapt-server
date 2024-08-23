@@ -65,6 +65,14 @@ def phase1_eval(cfg: Config, duration: int = 6, best_model: bool = True):
         ).to(device)
         agent.load_state_dict(torch.load(model_path))
 
+    elif cfg.agent == "RMA_DATT":
+        agent = RMA_DATT(
+            priv_info_shape=env.unwrapped.priv_info_shape,
+            state_shape=env.unwrapped.state_obs_shape,
+            traj_shape=env.unwrapped.reference_traj_shape,
+            action_shape=env.action_space.shape,
+        ).to(device)
+        agent.load_state_dict(torch.load(model_path))
     else:
         raise ValueError("Invalid agent type")
 
@@ -99,6 +107,7 @@ def phase1_eval(cfg: Config, duration: int = 6, best_model: bool = True):
 
     for i in range(len(t)):
         env.unwrapped.target_position = ref_positon[i]
+        env.unwrapped.target_velocity = ref_velocity[i]
         action = agent.get_action_and_value(
             torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
         )[0]

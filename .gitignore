@@ -163,3 +163,7 @@ cython_debug/
 tests/outputs
 runs
 wandb
+adapt_drones/assets/crazy_trajs_eval.npy
+adapt_drones/assets/crazy_trajs_train.npy
+adapt_drones/assets/pi_tcn_eval.npy
+adapt_drones/assets/pi_tcn_train.npy
