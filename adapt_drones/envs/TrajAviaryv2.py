@@ -202,6 +202,12 @@ class TrajAviaryv2(BaseAviary):
         isclose = 0.001
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
+        rot_mat = np.zeros((9, 1))
+
+        mujoco.mju_quat2Mat(rot_mat, self.quat)
+        euler = rotation.mat2euler(rot_mat.reshape(3, 3))
+
+        roll, pitch, yaw = euler
 
         distance_reward = rewards.tolerance(
             norm_position, bounds=(-isclose, isclose), margin=margin
@@ -211,8 +217,15 @@ class TrajAviaryv2(BaseAviary):
             norm_velocity, bounds=(-isclose, isclose), margin=margin
         )
 
-        weights = np.array([0.75, 0.25])
-        reward_vector = np.array([distance_reward, velocity_reward])
+        roll_reward = rewards.tolerance(roll, bounds=(-isclose, isclose), margin=0.25)
+        pitch_reward = rewards.tolerance(pitch, bounds=(-isclose, isclose), margin=0.25)
+        yaw_reward = rewards.tolerance(yaw, bounds=(-isclose, isclose), margin=0.25)
+
+        weights = np.array([0.7, 0.2, 0.05, 0.05, 0.05])
+        weights = weights / np.sum(weights)
+        reward_vector = np.array(
+            [distance_reward, velocity_reward, roll_reward, pitch_reward, yaw_reward]
+        )
         crash_reward = -100.0 if len(self.data.contact.dim) > 0 else 0.0
 
         reward = np.dot(weights, reward_vector) + crash_reward
