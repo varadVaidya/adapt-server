@@ -217,9 +217,11 @@ class TrajAviaryv2(BaseAviary):
             norm_velocity, bounds=(-isclose, isclose), margin=margin
         )
 
-        roll_reward = rewards.tolerance(roll, bounds=(-isclose, isclose), margin=0.25)
-        pitch_reward = rewards.tolerance(pitch, bounds=(-isclose, isclose), margin=0.25)
-        yaw_reward = rewards.tolerance(yaw, bounds=(-isclose, isclose), margin=0.25)
+        roll_reward = rewards.tolerance(roll, bounds=(-isclose, isclose), margin=0.125)
+        pitch_reward = rewards.tolerance(
+            pitch, bounds=(-isclose, isclose), margin=0.125
+        )
+        yaw_reward = rewards.tolerance(yaw, bounds=(-isclose, isclose), margin=0.125)
 
         weights = np.array([0.7, 0.2, 0.05, 0.05, 0.05])
         weights = weights / np.sum(weights)
