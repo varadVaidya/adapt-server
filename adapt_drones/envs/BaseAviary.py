@@ -53,9 +53,7 @@ class BaseAviary(gym.Env):
         self.camera_name = camera_name
 
         # MuJoCo modeladapt_drones
-        xml_file = pkg_resources.resource_filename(
-            "adapt_drones", "assets/cf/scene.xml"
-        )
+        xml_file = pkg_resources.resource_filename("adapt_drones", "assets/quad.xml")
 
         if not os.path.exists(xml_file):
             raise FileNotFoundError(f"File {xml_file} not found")
@@ -75,7 +73,7 @@ class BaseAviary(gym.Env):
         self.data.qpos = self.init_pose
 
         self.model.opt.timestep = self.mj_timestep
-        self.drone_id = self.data.body("cf2").id
+        self.drone_id = self.data.body("quad").id
         self.com_site_id = mujoco.mj_name2id(self.model, 6, "thrust_com")
 
         self.thrust2weight = 3.5
