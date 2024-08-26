@@ -117,7 +117,7 @@ class TrajAviaryv2Config:
 
         self.roll_pitch = [-0.15, 0.15] if not eval else [-0.15, 0.15]
 
-        self.scale_lengths = [0.05, 0.16] if self.scale else [0.16, 0.16]
+        self.scale_lengths = [0.05, 0.16] if self.scale else [0.05, 0.05]
 
         trajectory_path = pkg_resources.resource_filename(
             "adapt_drones", "assets/crazy_trajs_train.npy"
