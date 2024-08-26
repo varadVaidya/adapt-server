@@ -222,11 +222,23 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
             pitch, bounds=(-isclose, isclose), margin=0.125
         )
         yaw_reward = rewards.tolerance(yaw, bounds=(-isclose, isclose), margin=0.125)
+        action_reward = rewards.tolerance(
+            np.linalg.norm(self.last_force_torque_action[1:]),
+            bounds=(-isclose, isclose),
+            margin=0.125,
+        )
 
-        weights = np.array([0.5, 0.5, 0.1, 0.1, 0.1])
+        weights = np.array([0.5, 0.5, 0.1, 0.1, 0.1, 0.2])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
-            [distance_reward, velocity_reward, roll_reward, pitch_reward, yaw_reward]
+            [
+                distance_reward,
+                velocity_reward,
+                roll_reward,
+                pitch_reward,
+                yaw_reward,
+                action_reward,
+            ]
         )
         crash_reward = -100.0 if len(self.data.contact.dim) > 0 else 0.0
 
