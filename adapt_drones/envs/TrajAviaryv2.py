@@ -223,7 +223,7 @@ class TrajAviaryv2(BaseAviary):
         )
         yaw_reward = rewards.tolerance(yaw, bounds=(-isclose, isclose), margin=0.125)
 
-        weights = np.array([0.7, 0.2, 0.01, 0.01, 0.1])
+        weights = np.array([0.5, 0.5, 0.1, 0.1, 0.1])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [distance_reward, velocity_reward, roll_reward, pitch_reward, yaw_reward]
