@@ -50,6 +50,8 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         self.action_space = self._action_space()
         self.observation_space = self._observation_space()
 
+        self.action_buffer = np.zeros((4, 4))
+
     def _action_space(self):
         lower_bound = -1 * np.ones(4)
         upper_bound = np.ones(4)
@@ -125,6 +127,15 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         initial_info = self._compute_info()
 
         return initial_obs, initial_info
+
+    def step(self, action):
+        """
+        Extendeds the step method in the BaseAviary class to include action buffer
+        """
+        obs, reward, terminated, truncated, info = super().step(action)
+        self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
+
+        return obs, reward, terminated, truncated, info
 
     def _compute_obs(self):
         """
@@ -202,6 +213,7 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         isclose = 0.001
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
+        norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0))
         rot_mat = np.zeros((9, 1))
 
         mujoco.mju_quat2Mat(rot_mat, self.quat)
@@ -223,9 +235,7 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         )
         yaw_reward = rewards.tolerance(yaw, bounds=(-isclose, isclose), margin=0.125)
         action_reward = rewards.tolerance(
-            np.linalg.norm(self.last_force_torque_action[1:]),
-            bounds=(-isclose, isclose),
-            margin=0.125,
+            norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
         weights = np.array([0.5, 0.5, 0.1, 0.1, 0.1, 0.2])
