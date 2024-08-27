@@ -46,7 +46,7 @@ class Config:
         agent="AC",
         warm_start=False,
         warm_model=None,
-        wandb_project="adapt-test",
+        wandb_project="adapt-test-new",
         **kwargs,
     ):
 
