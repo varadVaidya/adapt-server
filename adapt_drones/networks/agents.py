@@ -160,11 +160,11 @@ class RMA_DATT(nn.Module):
         # x = observation.
 
         env_obs = x[:, : self.priv_info_shape]
-        traj_obs = x[
-            :,
-            self.priv_info_shape : self.priv_info_shape + self.traj_encoder_input_size,
+        state_obs = x[
+            :, self.priv_info_shape : self.priv_info_shape + self.state_obs_shape
         ]
-        state_obs = x[:, self.priv_info_shape + self.traj_encoder_input_size :]
+
+        traj_obs = x[:, self.priv_info_shape + self.state_obs_shape :]
 
         env_encoder = self.env_encoder(env_obs)
         traj_encoder = self.traj_encoder(traj_obs)
@@ -180,11 +180,11 @@ class RMA_DATT(nn.Module):
     ):
         # x = observation.
         env_obs = x[:, : self.priv_info_shape]
-        traj_obs = x[
-            :,
-            self.priv_info_shape : self.priv_info_shape + self.traj_encoder_input_size,
+        state_obs = x[
+            :, self.priv_info_shape : self.priv_info_shape + self.state_obs_shape
         ]
-        state_obs = x[:, self.priv_info_shape + self.traj_encoder_input_size :]
+
+        traj_obs = x[:, self.priv_info_shape + self.state_obs_shape :]
         env_encoder = (
             self.env_encoder(env_obs) if predicited_enc is None else predicited_enc
         )
