@@ -80,6 +80,7 @@ class Actor(nn.Module):
             layers.append(nn.Tanh())
             current_size = hidden_layer
         layers.append(layer_init(nn.Linear(current_size, output_size), std=0.01))
+        layers.append(nn.Tanh())
 
         # convert to nn.Sequential
         self.model = nn.Sequential(*layers)
