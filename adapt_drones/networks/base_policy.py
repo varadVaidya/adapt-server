@@ -38,9 +38,9 @@ class TrajectoryEncoder(nn.Module):
 
     def __init__(self, input_size, output_size=32):
         super(TrajectoryEncoder, self).__init__()
-        self.conv1 = nn.Conv1d(1, 16, kernel_size=3, stride=1)
-        self.conv2 = nn.Conv1d(16, 16, kernel_size=3, stride=1)
-        self.conv3 = nn.Conv1d(16, 16, kernel_size=3, stride=1)
+        self.conv1 = nn.Conv1d(1, 32, kernel_size=3, stride=1)
+        self.conv2 = nn.Conv1d(32, 32, kernel_size=3, stride=1)
+        self.conv3 = nn.Conv1d(32, 32, kernel_size=3, stride=1)
 
         # do a forward pass to calculate the input dimension of the linear layer
         with torch.no_grad():

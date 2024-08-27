@@ -101,7 +101,7 @@ class TrajAviaryv2Config:
     env_id: str = "traj_v2"
     episode_length: int = 6  # secs
     agent_name: tuple = ("RMA_DATT",)
-    trajectory_window: int = 50
+    trajectory_window: int = 100
 
     def __init__(self, eval, scale):
         self.eval = eval
@@ -146,7 +146,7 @@ class TrajAviaryv3Config:
     env_id: str = "traj_v2"
     episode_length: int = 6  # secs
     agent_name: tuple = ("RMA_DATT",)
-    trajectory_window: int = 50
+    trajectory_window: int = 100
 
     def __init__(self, eval, scale):
         self.eval = eval
