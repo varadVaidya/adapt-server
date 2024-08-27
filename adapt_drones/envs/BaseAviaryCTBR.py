@@ -182,7 +182,7 @@ class BaseAviaryCTBR(gym.Env):
 
         self.max_thrust = max_thrust
         self.max_torque = np.array([max_torque_xy, max_torque_xy, max_torque_z])
-        self.max_ang_vel = 10.0  # rad/s
+        self.max_ang_vel = 2.0  # rad/s
 
     def update_kinematic_data(self):
         """Update the kinematic data of the drone"""
