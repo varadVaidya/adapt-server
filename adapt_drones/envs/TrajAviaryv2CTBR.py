@@ -220,6 +220,9 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         euler = rotation.mat2euler(rot_mat.reshape(3, 3))
 
         roll, pitch, yaw = euler
+        roll_ref, pitch_ref, yaw_ref = self.reference_trajectory[
+            self.step_counter, 7:10
+        ]
 
         distance_reward = rewards.tolerance(
             norm_position, bounds=(-isclose, isclose), margin=margin
@@ -229,11 +232,15 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
             norm_velocity, bounds=(-isclose, isclose), margin=margin
         )
 
-        roll_reward = rewards.tolerance(roll, bounds=(-isclose, isclose), margin=0.125)
-        pitch_reward = rewards.tolerance(
-            pitch, bounds=(-isclose, isclose), margin=0.125
+        roll_reward = rewards.tolerance(
+            roll_ref - roll, bounds=(-isclose, isclose), margin=0.125
         )
-        yaw_reward = rewards.tolerance(yaw, bounds=(-isclose, isclose), margin=0.125)
+        pitch_reward = rewards.tolerance(
+            pitch_ref - pitch, bounds=(-isclose, isclose), margin=0.125
+        )
+        yaw_reward = rewards.tolerance(
+            yaw_ref - yaw, bounds=(-isclose, isclose), margin=0.125
+        )
         action_reward = rewards.tolerance(
             norm_action, bounds=(-isclose, isclose), margin=0.1
         )
