@@ -223,7 +223,6 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         roll_ref, pitch_ref, yaw_ref = self.reference_trajectory[
             self.step_counter, 7:10
         ]
-
         distance_reward = rewards.tolerance(
             norm_position, bounds=(-isclose, isclose), margin=margin
         )
@@ -245,7 +244,7 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
             norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
-        weights = np.array([0.5, 0.5, 0.1, 0.1, 0.1, 0.2])
+        weights = np.array([0.5, 0.5, 0.2, 0.2, 0.2, 0.2])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
