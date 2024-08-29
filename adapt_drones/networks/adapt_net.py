@@ -18,7 +18,7 @@ class AdaptationNetwork(nn.Module):
 
         # MLP for initial feature extraction
         self.mlp = nn.Sequential(
-            nn.Linear(15168, mlp_hidden),
+            nn.Linear(6016, mlp_hidden),
             nn.ReLU(),
             nn.Linear(mlp_hidden, mlp_hidden),
             nn.ReLU(),
