@@ -14,6 +14,7 @@ from adapt_drones.cfgs.config import *
 from adapt_drones.utils.learning import make_env
 from adapt_drones.networks.ppo import ppo_train
 from adapt_drones.utils.git_utils import check_git_clean
+from adapt_drones.networks.adapt_net import adapt_train_datt_rma
 
 check_git_clean()
 
@@ -71,6 +72,30 @@ envs = gym.vector.SyncVectorEnv(
 )
 
 ppo_train(args=cfg, envs=envs)
+
+learning = Learning(
+    init_lr=2e-4,
+    anneal_lr=False,
+    num_envs=128,
+    total_timesteps=5_000_000,
+)
+kwargs = {"learning": learning}
+adapt_cfg = Config(
+    env_id=args.env_id,
+    seed=args.seed,
+    run_name=args.run_name,
+    scale=args.scale,
+    agent=args.agent,
+    **kwargs,
+)
+
+envs = gym.vector.SyncVectorEnv(
+    [
+        make_env(adapt_cfg.env_id, cfg=adapt_cfg)
+        for _ in range(adapt_cfg.learning.num_envs)
+    ]
+)
+adapt_train_datt_rma(adapt_cfg, envs)
 
 with open("runs/" + cfg.grp_name + "/" + cfg.run_name + "/config.yaml", "w") as f:
     yaml.dump(asdict(cfg), f)
