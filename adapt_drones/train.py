@@ -81,11 +81,11 @@ learning = Learning(
 )
 kwargs = {"learning": learning}
 adapt_cfg = Config(
-    env_id=args.env_id,
-    seed=args.seed,
-    run_name=args.run_name,
-    scale=args.scale,
-    agent=args.agent,
+    env_id=cfg.env_id,
+    seed=cfg.seed,
+    run_name=cfg.run_name,
+    scale=cfg.scale,
+    agent=cfg.agent,
     **kwargs,
 )
 
