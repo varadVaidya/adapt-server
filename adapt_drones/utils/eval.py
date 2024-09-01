@@ -300,8 +300,8 @@ def RMA_DATT_eval(cfg, best_model=True, duration=6):
 
 
 def paper_phase_1_eval(cfg, best_model=True, duration=6):
-    print("=================================")
-    print("Adapt Evaluation")
+    # print("=================================")
+    # print("Adapt Evaluation")
 
     # seeding again for sanity
     random.seed(cfg.seed)
@@ -320,7 +320,7 @@ def paper_phase_1_eval(cfg, best_model=True, duration=6):
     model_path = (
         run_folder + "best_model.pt" if best_model else run_folder + "final_model.pt"
     )
-    print("Model Path:", model_path)
+    # print("Model Path:", model_path)
 
     device = torch.device(
         "cuda" if torch.cuda.is_available() and cfg.learning.cuda else "cpu"
@@ -350,7 +350,7 @@ def paper_phase_1_eval(cfg, best_model=True, duration=6):
     model_path = (
         run_folder + "best_model.pt" if best_model else run_folder + "final_model.pt"
     )
-    print("Model Path:", model_path)
+    # print("Model Path:", model_path)
 
     device = torch.device(
         "cuda" if torch.cuda.is_available() and cfg.learning.cuda else "cpu"
@@ -379,7 +379,7 @@ def paper_phase_1_eval(cfg, best_model=True, duration=6):
         thrust2weight=f"TWR:{thrust2weight}",
     )
 
-    print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
+    # print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
     t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(duration=duration)
 
@@ -403,12 +403,12 @@ def paper_phase_1_eval(cfg, best_model=True, duration=6):
     mean_error = np.mean(np.linalg.norm(pos_error, axis=1))
     rms_error = np.sqrt(np.mean(np.linalg.norm(pos_error, axis=1) ** 2))
 
-    return mean_error, rms_error
+    return mean_error, rms_error, mass, inertia[0], inertia[1], inertia[2]
 
 
 def paper_RMA_DATT_eval(cfg, best_model=True, duration=6):
-    print("=================================")
-    print("Adapt Evaluation")
+    # print("=================================")
+    # print("Adapt Evaluation")
 
     # seeding again for sanity
     random.seed(cfg.seed)
@@ -427,9 +427,9 @@ def paper_RMA_DATT_eval(cfg, best_model=True, duration=6):
     model_path = (
         run_folder + "best_model.pt" if best_model else run_folder + "final_model.pt"
     )
-    print("Model Path:", model_path)
+    # print("Model Path:", model_path)
     adapt_path = run_folder + "adapt_network.pt"
-    print("Adapt Path:", adapt_path)
+    # print("Adapt Path:", adapt_path)
 
     device = torch.device(
         "cuda" if torch.cuda.is_available() and cfg.learning.cuda else "cpu"
@@ -487,7 +487,7 @@ def paper_RMA_DATT_eval(cfg, best_model=True, duration=6):
         thrust2weight=f"TWR:{thrust2weight}",
     )
 
-    print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
+    # print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
     t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(duration=duration)
 
@@ -529,4 +529,4 @@ def paper_RMA_DATT_eval(cfg, best_model=True, duration=6):
     mean_error = np.mean(np.linalg.norm(pos_error, axis=1))
     rms_error = np.sqrt(np.mean(np.linalg.norm(pos_error, axis=1) ** 2))
 
-    return mean_error, rms_error
+    return mean_error, rms_error, mass, inertia[0], inertia[1], inertia[2]

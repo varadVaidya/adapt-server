@@ -416,7 +416,7 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
 
         idx = self.np_random.integers(0, eval_trajs.shape[0])
         eval_traj = eval_trajs[idx]
-        print("eval traj", eval_traj.shape)
+        # print("eval traj", eval_traj.shape)
         self.reference_trajectory = eval_traj
         self._kinematics_reset()
         duration = eval_traj.shape[0] - (self.trajectory_window + 1)
