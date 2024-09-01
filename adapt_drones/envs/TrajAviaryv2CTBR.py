@@ -214,15 +214,7 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
         norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0))
-        rot_mat = np.zeros((9, 1))
 
-        mujoco.mju_quat2Mat(rot_mat, self.quat)
-        euler = rotation.mat2euler(rot_mat.reshape(3, 3))
-
-        roll, pitch, yaw = euler
-        roll_ref, pitch_ref, yaw_ref = self.reference_trajectory[
-            self.step_counter, 7:10
-        ]
         distance_reward = rewards.tolerance(
             norm_position, bounds=(-isclose, isclose), margin=margin
         )
@@ -231,28 +223,16 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
             norm_velocity, bounds=(-isclose, isclose), margin=margin
         )
 
-        roll_reward = rewards.tolerance(
-            roll_ref - roll, bounds=(-isclose, isclose), margin=0.125
-        )
-        pitch_reward = rewards.tolerance(
-            pitch_ref - pitch, bounds=(-isclose, isclose), margin=0.125
-        )
-        yaw_reward = rewards.tolerance(
-            yaw_ref - yaw, bounds=(-isclose, isclose), margin=0.125
-        )
         action_reward = rewards.tolerance(
             norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
-        weights = np.array([0.5, 0.5, 0.2, 0.2, 0.2, 0.2])
+        weights = np.array([0.5, 0.5, 0.2])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
                 distance_reward,
                 velocity_reward,
-                roll_reward,
-                pitch_reward,
-                yaw_reward,
                 action_reward,
             ]
         )
