@@ -1,5 +1,5 @@
 method: bayes
-name: sweep_fuick
+name: wandb_sweep
 metric:
   goal: maximize
   name: charts/episodic_return
