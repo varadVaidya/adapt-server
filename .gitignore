@@ -168,3 +168,4 @@ adapt_drones/assets/crazy_trajs_train.npy
 adapt_drones/assets/pi_tcn_eval.npy
 adapt_drones/assets/pi_tcn_train.npy
 adapt_drones/assets/cf
+adapt_drones/utils/sweep_ids.yaml
