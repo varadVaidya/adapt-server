@@ -55,7 +55,6 @@ def sweep(cfg, sweep_id):
             )
             cfg.learning.update_epochs = int(cfg.learning.update_epochs)
             print(cfg.learning)
-            print(cfg.learning.anneal_lr, type(cfg.learning.anneal_lr))
             cfg.run_name = run.name
             cfg.experiment.run_name = run.name
             cfg.experiment.track = True
@@ -103,7 +102,6 @@ if __name__ == "__main__":
     sweep_ids = {k: None if v == "None" else v for k, v in sweep_ids.items()}
 
     sweep_id = sweep_ids[cfg.experiment.grp_name]
-    print("Sweep ID: ", sweep_id, type(sweep_id))
 
     if sweep_id is None:
         print("Creating new sweep")
