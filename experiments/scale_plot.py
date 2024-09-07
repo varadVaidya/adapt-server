@@ -11,8 +11,8 @@ from adapt_drones.cfgs.config import *
 
 @dataclass
 class Args:
-    env_id: str = "traj_v2_ctbr"
-    run_name: str = "zany-elevator-1"
+    env_id: str = "traj_v2"
+    run_name: str = "clear-silence-3"
     seed: int = 20240915
     agent: str = "RMA_DATT"
     scale: bool = True

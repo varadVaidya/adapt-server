@@ -28,10 +28,11 @@ class Args:
     scale: bool = True
 
 
-env_runs = [["traj_v2_ctbr", "zany-elevator-1"], ["traj_v2", "absurd-puddle-1"]]
+env_runs = [["traj_v2_ctbr", "vital-pond-4"], ["traj_v2", "clear-silence-3"]]
 
 for env_run in env_runs:
     args = Args(env_id=env_run[0], run_name=env_run[1])
+    print("Running for env:", args.env_id, "run_name:", args.run_name)
 
     cfg = Config(
         env_id=args.env_id,
