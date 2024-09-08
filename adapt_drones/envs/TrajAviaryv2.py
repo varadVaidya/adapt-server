@@ -135,7 +135,7 @@ class TrajAviaryv2(BaseAviary):
         obs, reward, terminated, truncated, info = super().step(action)
         self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
-        return obs, reward, terminated, truncated, info
+        return obs, reward, truncated, False, info
 
     def _compute_obs(self):
         """
