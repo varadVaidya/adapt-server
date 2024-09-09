@@ -135,7 +135,7 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         obs, reward, terminated, truncated, info = super().step(action)
         self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
-        return obs, reward, terminated, truncated, info
+        return obs, reward, truncated, False, info
 
     def _compute_obs(self):
         """
@@ -399,6 +399,8 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         self.prop_const = _km_kf
 
         self.thrust2weight = 2.75
+
+        mujoco.mj_setConst(self.model, self.data)
 
         # TODO: add wind.
 

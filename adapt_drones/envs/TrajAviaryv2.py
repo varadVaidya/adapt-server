@@ -401,6 +401,8 @@ class TrajAviaryv2(BaseAviary):
 
         self.thrust2weight = 2.75
 
+        mujoco.mj_setConst(self.model, self.data)
+
         # TODO: add wind.
 
     def eval_trajectory(self, duration: int):
