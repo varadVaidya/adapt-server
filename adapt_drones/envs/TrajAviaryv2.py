@@ -118,9 +118,9 @@ class TrajAviaryv2(BaseAviary):
         # dynamics reset
         self._dynamics_reset()
 
+        self.housekeeping()
         self.set_max_force_torque_limits()
 
-        self.housekeeping()
         self.update_kinematic_data()
 
         initial_obs = self._compute_obs()
