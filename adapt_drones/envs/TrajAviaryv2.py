@@ -225,7 +225,7 @@ class TrajAviaryv2(BaseAviary):
         ]
 
         distance_reward = rewards.tolerance(
-            norm_position, bounds=(-isclose, isclose), margin=margin
+            norm_position, bounds=(-isclose, isclose), margin=0.75
         )
 
         velocity_reward = rewards.tolerance(
@@ -245,7 +245,7 @@ class TrajAviaryv2(BaseAviary):
             norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
-        weights = np.array([0.5, 0.5, 0.05, 0.05, 0.05, 0.05])
+        weights = np.array([0.75, 0.2, 0.05, 0.05, 0.05, 0.05])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
