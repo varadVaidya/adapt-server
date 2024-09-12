@@ -28,7 +28,7 @@ class Args:
     scale: bool = True
 
 
-env_runs = [["traj_v2_ctbr", "vital-pond-4"], ["traj_v2", "clear-silence-3"]]
+env_runs = [["traj_v2", "fiery-pine-13"], ["traj_v2", "leafy-wood-11"]]
 
 for env_run in env_runs:
     args = Args(env_id=env_run[0], run_name=env_run[1])
@@ -53,7 +53,7 @@ for env_run in env_runs:
 
     ### * EVAL CODE
 
-    sc = np.linspace(0.06, 0.16, 11)
+    sc = np.linspace(0.05, 0.16, 11)
     print("Scale lengths:", sc)
     sc_list = [[i, i] for i in sc]
     num_sc_list = len(sc_list)

@@ -12,7 +12,7 @@ from adapt_drones.cfgs.config import *
 @dataclass
 class Args:
     env_id: str = "traj_v2"
-    run_name: str = "clear-silence-3"
+    run_name: str = "fiery-pine-13"
     seed: int = 20240915
     agent: str = "RMA_DATT"
     scale: bool = True
@@ -37,7 +37,7 @@ RMA_DATT_results = np.load(results_folder + "rma_datt_results.npy")
 idx_sort_phase = np.argsort(np.mean(phase_1_results[:, :, 2], axis=1))
 sorted_phase_1 = phase_1_results[idx_sort_phase]
 
-phase_1 = sorted_phase_1[:10]
+phase_1 = sorted_phase_1[:25]
 
 
 mosaic = [["main"], ["mass"], ["ixx"], ["iyy"], ["izz"]]
@@ -78,7 +78,7 @@ axs["main"].errorbar(
 #     capthick=1,
 # )
 # axs["main"].set_xlabel("Arm Length")
-axs["main"].set_ylabel("Position Error (m)")
+axs["main"].set_ylabel("Mean Position Error (m)")
 
 mean_mass = np.mean(phase_1[:, :, 4], axis=0)
 std_mass = np.std(phase_1[:, :, 4], axis=0)
@@ -143,7 +143,7 @@ plt.xlabel("Arm Length (m)")
 
 plt.savefig(results_folder + "phase_1_plot.png")
 
-plt.show()
+# plt.show()
 
 ############## do the same for RMA_DATT ####################
 idx_sort_rma = np.argsort(np.mean(RMA_DATT_results[:, :, 2], axis=1))
@@ -189,7 +189,7 @@ axs["main"].errorbar(
 #     capthick=1,
 # )
 # axs["main"].set_xlabel("Arm Length")
-axs["main"].set_ylabel("Position Error (m)")
+axs["main"].set_ylabel("Mean Position Error (m)")
 
 mean_mass = np.mean(rma_datt[:, :, 4], axis=0)
 std_mass = np.std(rma_datt[:, :, 4], axis=0)
