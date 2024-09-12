@@ -109,8 +109,8 @@ class TrajAviaryv2Config:
 
         # pos_xy here refers to the delta in the drone's position
         # compared the reference position
-        self.pos_xy = [-0.25, 0.25] if not eval else [-0.25, 0.25]
-        self.pos_z = [-0.25, 0.25] if not eval else [-0.25, 0.25]
+        self.pos_xy = [-0.10, 0.10] if not eval else [-0.10, 0.10]
+        self.pos_z = [-0.1, 0.1] if not eval else [-0.1, 0.1]
 
         self.linear_vel = [-0.1, 0.1] if not eval else [-0.125, 0.125]
         self.angular_vel = [-0.05, 0.05] if not eval else [-0.05, 0.05]
