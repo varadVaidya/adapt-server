@@ -15,7 +15,7 @@ import adapt_drones.utils.visuals as visuals
 
 class TrajAviaryv3(BaseAviary):
     """
-    Tracks the trajectory collected using crazyflie.
+    Tracks the trajectory from slowed PITCN dataset.
     """
 
     # TODO: check is the action buffer is needed or not.
@@ -50,7 +50,7 @@ class TrajAviaryv3(BaseAviary):
         self.action_space = self._action_space()
         self.observation_space = self._observation_space()
 
-        self.action_buffer = np.zeros((2, 4))
+        self.action_buffer = np.zeros((4, 4))
 
     def _action_space(self):
         lower_bound = -1 * np.ones(4)
@@ -113,15 +113,14 @@ class TrajAviaryv3(BaseAviary):
 
         # trajectory reset
         self.reference_trajectory = self.reference_trajectory_reset()
-
         # kinematics reset
         self._kinematics_reset()
         # dynamics reset
         self._dynamics_reset()
 
+        self.housekeeping()
         self.set_max_force_torque_limits()
 
-        self.housekeeping()
         self.update_kinematic_data()
 
         initial_obs = self._compute_obs()
@@ -131,14 +130,12 @@ class TrajAviaryv3(BaseAviary):
 
     def step(self, action):
         """
-        Extends the step method in the BaseAviary class.
-        Adds action to the action buffer.
+        Extendeds the step method in the BaseAviary class to include action buffer
         """
         obs, reward, terminated, truncated, info = super().step(action)
+        self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
-        self.action_buffer = np.concatenate((self.action_buffer[1:], [action]))
-
-        return obs, reward, terminated, truncated, info
+        return obs, reward, truncated, False, info
 
     def _compute_obs(self):
         """
@@ -212,27 +209,54 @@ class TrajAviaryv3(BaseAviary):
 
     def _compute_reward(self):
 
-        margin = 1.0
+        margin = 0.5
         isclose = 0.001
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
+        norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0))
+        rot_mat = np.zeros((9, 1))
 
-        norm_control = np.linalg.norm((self.action_buffer[1] - self.action_buffer[0]))
+        mujoco.mju_quat2Mat(rot_mat, self.quat)
+        euler = rotation.mat2euler(rot_mat.reshape(3, 3))
+
+        roll, pitch, yaw = euler
+        roll_ref, pitch_ref, yaw_ref = self.reference_trajectory[
+            self.step_counter, 7:10
+        ]
 
         distance_reward = rewards.tolerance(
-            norm_position, bounds=(-isclose, isclose), margin=margin
+            norm_position, bounds=(-isclose, isclose), margin=0.75
         )
 
         velocity_reward = rewards.tolerance(
             norm_velocity, bounds=(-isclose, isclose), margin=margin
         )
 
-        control_reward = rewards.tolerance(
-            norm_control, bounds=(-isclose, isclose), margin=margin
+        roll_reward = rewards.tolerance(
+            roll_ref - roll, bounds=(-isclose, isclose), margin=0.125
+        )
+        pitch_reward = rewards.tolerance(
+            pitch_ref - pitch, bounds=(-isclose, isclose), margin=0.125
+        )
+        yaw_reward = rewards.tolerance(
+            yaw_ref - yaw, bounds=(-isclose, isclose), margin=0.125
+        )
+        action_reward = rewards.tolerance(
+            norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
-        weights = np.array([0.75, 0.2, 0.05])
-        reward_vector = np.array([distance_reward, velocity_reward, control_reward])
+        weights = np.array([0.75, 0.2, 0.0, 0.0, 0.0, 0.05])
+        weights = weights / np.sum(weights)
+        reward_vector = np.array(
+            [
+                distance_reward,
+                velocity_reward,
+                roll_reward,
+                pitch_reward,
+                yaw_reward,
+                action_reward,
+            ]
+        )
         crash_reward = -100.0 if len(self.data.contact.dim) > 0 else 0.0
 
         reward = np.dot(weights, reward_vector) + crash_reward
@@ -288,23 +312,27 @@ class TrajAviaryv3(BaseAviary):
                 self.np_random.uniform(_pos_z[0], _pos_z[1], 1),
             )
         )
-        init_pos[0:3] = self.reference_trajectory[0, 1:4]
-        init_pos[3:7] = self.reference_trajectory[0, 10:14]
+        init_pos[0:3] = self.reference_trajectory[0][1:4]
+
+        _roll_pitch = self.cfg.environment.roll_pitch
+
+        euler = np.concatenate(
+            [self.np_random.uniform(_roll_pitch[0], _roll_pitch[1], 2), [0.0]]
+        )
+        mat = rotation.euler2mat(euler).reshape(9)
+        mujoco.mju_mat2Quat(init_pos[3:7], mat)
+
+        self.data.qpos = init_pos
 
         _lin_vel = self.cfg.environment.linear_vel
         _ang_vel = self.cfg.environment.angular_vel
 
-        self.data.qpos = init_pos
         self.data.qvel = np.concatenate(
             [
-                self.reference_trajectory[0, 4:7],
-                self.reference_trajectory[0, 14:17],
+                self.reference_trajectory[0][4:7],
+                self.np_random.uniform(_ang_vel[0], _ang_vel[1], 3),
             ]
         )
-        qacc_warmstart = np.zeros(6)
-        qacc_warmstart[0:3] = self.reference_trajectory[0, 7:10]
-        qacc_warmstart[3:6] = self.reference_trajectory[0, 17:20]
-        self.data.qacc_warmstart = qacc_warmstart
 
     def _dynamics_reset(self):
         """
@@ -373,6 +401,8 @@ class TrajAviaryv3(BaseAviary):
 
         self.thrust2weight = 2.75
 
+        mujoco.mj_setConst(self.model, self.data)
+
         # TODO: add wind.
 
     def eval_trajectory(self, duration: int):
@@ -389,14 +419,10 @@ class TrajAviaryv3(BaseAviary):
 
         idx = self.np_random.integers(0, eval_trajs.shape[0])
         eval_traj = eval_trajs[idx]
-
-        rows_not_nan = sum(~np.isnan(eval_traj[:, 0]))
-        self.reference_trajectory = eval_traj[:rows_not_nan]
-
-        print("eval traj", self.reference_trajectory.shape)
-
+        # print("eval traj", eval_traj.shape)
+        self.reference_trajectory = eval_traj
         self._kinematics_reset()
-        duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
+        duration = eval_traj.shape[0] - (self.trajectory_window + 1)
 
         t = np.linspace(0, duration / self.mj_freq, duration)
 
