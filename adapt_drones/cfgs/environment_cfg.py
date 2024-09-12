@@ -165,11 +165,11 @@ class TrajAviaryv3Config:
         self.scale_lengths = [0.05, 0.16] if self.scale else [0.05, 0.05]
 
         trajectory_path = pkg_resources.resource_filename(
-            "adapt_drones", "assets/slowed_pi_tcn_train.npy"
+            "adapt_drones", "assets/slow_pi_tcn_train.npy"
         )
         self.trajectory_dataset = np.load(trajectory_path)
         self.eval_trajectory_path = pkg_resources.resource_filename(
-            "adapt_drones", "assets/slowed_pi_tcn_eval.npy"
+            "adapt_drones", "assets/slow_pi_tcn_eval.npy"
         )
 
 
