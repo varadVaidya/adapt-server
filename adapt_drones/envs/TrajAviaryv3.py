@@ -291,7 +291,7 @@ class TrajAviaryv3(BaseAviary):
                 self.np_random.uniform(_pos_z[0], _pos_z[1], 1),
             )
         )
-        init_pos[0:3] = self.reference_trajectory[0][1:4]
+        init_pos[0:3] = self.reference_trajectory[0][1:4] + delta_pos
 
         _roll_pitch = self.cfg.environment.roll_pitch
 
@@ -306,9 +306,11 @@ class TrajAviaryv3(BaseAviary):
         _lin_vel = self.cfg.environment.linear_vel
         _ang_vel = self.cfg.environment.angular_vel
 
+        delta_vel = self.np_random.uniform(_lin_vel[0], _lin_vel[1], 3)
+
         self.data.qvel = np.concatenate(
             [
-                self.reference_trajectory[0][4:7],
+                self.reference_trajectory[0][4:7] + delta_vel,
                 self.np_random.uniform(_ang_vel[0], _ang_vel[1], 3),
             ]
         )
