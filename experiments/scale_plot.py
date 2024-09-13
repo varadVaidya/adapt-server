@@ -37,7 +37,7 @@ RMA_DATT_results = np.load(results_folder + "rma_datt_results.npy")
 idx_sort_phase = np.argsort(np.mean(phase_1_results[:, :, 2], axis=1))
 sorted_phase_1 = phase_1_results[idx_sort_phase]
 
-phase_1 = sorted_phase_1[:25]
+phase_1 = sorted_phase_1[5:-5]  # remove the top 5 and bottom 5 seeds
 
 
 mosaic = [["main"], ["mass"], ["ixx"], ["iyy"], ["izz"]]
