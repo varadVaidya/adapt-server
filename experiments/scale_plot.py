@@ -11,8 +11,8 @@ from adapt_drones.cfgs.config import *
 
 @dataclass
 class Args:
-    env_id: str = "traj_v2"
-    run_name: str = "fiery-pine-13"
+    env_id: str = "traj_v3"
+    run_name: str = "different-jazz-16"
     seed: int = 20240915
     agent: str = "RMA_DATT"
     scale: bool = True
