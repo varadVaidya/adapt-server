@@ -98,6 +98,8 @@ def phase1_eval(cfg: Config, duration: int = 6, best_model: bool = True):
         prop_const=f"Prop Constant:{prop_const}",
         arm_length=f"Arm Length:{arm_length}",
         thrust2weight=f"TWR:{thrust2weight}",
+        mean_error="",
+        rms_error="",
     )
 
     print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
@@ -231,6 +233,8 @@ def RMA_DATT_eval(cfg, best_model=True, duration=6):
         prop_const=f"Prop Constant:{prop_const}",
         arm_length=f"Arm Length:{arm_length}",
         thrust2weight=f"TWR:{thrust2weight}",
+        mean_error="",
+        rms_error="",
     )
 
     print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))

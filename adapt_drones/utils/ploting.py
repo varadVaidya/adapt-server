@@ -15,6 +15,8 @@ class TextonPlot:
     prop_const: str
     arm_length: str
     thrust2weight: str
+    mean_error: str
+    rms_error: str
 
 
 def data_plot(
@@ -33,6 +35,8 @@ def data_plot(
     rms_error = np.sqrt(np.mean(np.linalg.norm(pos_error, axis=1) ** 2))
     print("Mean Error:", mean_error)
     print("RMS Error:", rms_error)
+    plot_text.mean_error = "Mean Error: " + str(mean_error)
+    plot_text.rms_error = "RMS Error: " + str(rms_error)
 
     vel_error = goal_velocity - velocity
 
