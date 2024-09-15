@@ -152,7 +152,7 @@ def phase1_eval(cfg: Config, duration: int = 6, best_model: bool = True):
 
 def RMA_DATT_eval(cfg, best_model=True, duration=6):
     print("=================================")
-    print("Phase 1 Evaluation")
+    print("Adaptation Evaluation")
 
     # seeding again for sanity
     random.seed(cfg.seed)
