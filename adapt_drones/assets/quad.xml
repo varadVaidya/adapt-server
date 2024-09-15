@@ -1,6 +1,6 @@
 <mujoco model="Generic Quad">
   <compiler autolimits="false"/>
-  <option integrator="RK4"/>
+  <option integrator="RK4" density="1.2" viscosity="0.00002"/>
   <visual>
     <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
     <global azimuth="-20" elevation="-20" offwidth="1920" offheight="1080"/>
