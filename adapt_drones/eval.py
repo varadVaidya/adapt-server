@@ -44,14 +44,14 @@ current_branch_name = (
 print("Current branch name:", current_branch_name)
 branch_name = "runs/" + cfg.experiment.grp_name + "/" + args.run_name
 
-# checkoout to the branch
-# subprocess.check_output(["git", "checkout", branch_name])
+# checkout to the run tag
+subprocess.check_output(["git", "checkout", branch_name])
 
 # phase 1 eval
 phase1_eval(cfg=cfg, best_model=True)
 
-# return to the original branch
-# subprocess.check_output(["git", "checkout", current_branch_name])
-
 # rma eval
 RMA_DATT_eval(cfg=cfg, best_model=True)
+
+# return to the original branch
+subprocess.check_output(["git", "checkout", current_branch_name])
