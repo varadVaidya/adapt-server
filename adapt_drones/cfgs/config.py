@@ -87,6 +87,7 @@ class Config:
             "traj_v2": TrajAviaryv2Config,
             "traj_v3": TrajAviaryv3Config,
             "traj_v2_ctbr": TrajAviaryv2CTBRConfig,
+            "traj_v3_ctbr": TrajAviaryv3CTBRConfig,
         }
 
         try:
