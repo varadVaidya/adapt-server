@@ -305,7 +305,12 @@ def RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True)
     env.unwrapped.renderer.close()
 
 
-def paper_phase_1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
+def paper_phase_1_eval(
+    cfg: Config,
+    idx: [int, None] = None,
+    best_model: bool = True,
+    return_traj_len: bool = False,
+):
     # print("=================================")
     # print("Adapt Evaluation")
 
@@ -411,10 +416,18 @@ def paper_phase_1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = 
     mean_error = np.mean(np.linalg.norm(pos_error, axis=1))
     rms_error = np.sqrt(np.mean(np.linalg.norm(pos_error, axis=1) ** 2))
 
-    return mean_error, rms_error, mass, inertia[0], inertia[1], inertia[2]
+    if not return_traj_len:
+        return mean_error, rms_error, mass, inertia[0], inertia[1], inertia[2]
+    else:
+        return mean_error, rms_error, mass, inertia[0], inertia[1], inertia[2], len(t)
 
 
-def paper_RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
+def paper_RMA_DATT_eval(
+    cfg: Config,
+    idx: [int, None] = None,
+    best_model: bool = True,
+    return_traj_len: bool = False,
+):
     # print("=================================")
     # print("Adapt Evaluation")
 
@@ -539,4 +552,7 @@ def paper_RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool =
     mean_error = np.mean(np.linalg.norm(pos_error, axis=1))
     rms_error = np.sqrt(np.mean(np.linalg.norm(pos_error, axis=1) ** 2))
 
-    return mean_error, rms_error, mass, inertia[0], inertia[1], inertia[2]
+    if not return_traj_len:
+        return mean_error, rms_error, mass, inertia[0], inertia[1], inertia[2]
+    else:
+        return mean_error, rms_error, mass, inertia[0], inertia[1], inertia[2], len(t)
