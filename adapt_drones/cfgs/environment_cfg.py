@@ -143,6 +143,9 @@ class TrajAviaryv3Config:
 
     roll_pitch: list
 
+    wind_speed: list
+    max_wind: float
+
     env_id: str = "traj_v2"
     episode_length: int = 6  # secs
     agent_name: tuple = ("RMA_DATT",)
@@ -164,6 +167,8 @@ class TrajAviaryv3Config:
 
         self.scale_lengths = [0.05, 0.16] if self.scale else [0.05, 0.05]
 
+        self.wind_speed = [0.0, 1.5] if not eval else [0.0, 1.75]
+        self.max_wind = 2.0 if not eval else 2.0
         trajectory_path = pkg_resources.resource_filename(
             "adapt_drones", "assets/slow_pi_tcn_train.npy"
         )
