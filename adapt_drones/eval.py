@@ -2,6 +2,7 @@ import os
 import random
 import subprocess
 from dataclasses import dataclass
+from typing import Union
 
 os.environ["MUJOCO_GL"] = "egl"
 
@@ -24,6 +25,7 @@ class Args:
     seed: int = 15092024
     agent: str = "RMA_DATT"
     scale: bool = True
+    idx: Union[int, None] = None
 
 
 args = tyro.cli(Args)
@@ -45,13 +47,13 @@ print("Current branch name:", current_branch_name)
 branch_name = "runs/" + cfg.experiment.grp_name + "/" + args.run_name
 
 # checkout to the run tag
-subprocess.check_output(["git", "checkout", branch_name])
+# subprocess.check_output(["git", "checkout", branch_name])
 
 # phase 1 eval
-phase1_eval(cfg=cfg, best_model=True)
+phase1_eval(cfg=cfg, best_model=True, idx=args.idx)
 
 # rma eval
-RMA_DATT_eval(cfg=cfg, best_model=True)
+RMA_DATT_eval(cfg=cfg, best_model=True, idx=args.idx)
 
 # return to the original branch
-subprocess.check_output(["git", "checkout", current_branch_name])
+# subprocess.check_output(["git", "checkout", current_branch_name])

@@ -16,12 +16,13 @@ from adapt_drones.utils.ploting import data_plot, TextonPlot
 from adapt_drones.networks.adapt_net import AdaptationNetwork
 
 
-def phase1_eval(cfg: Config, duration: int = 6, best_model: bool = True):
+def phase1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
     """Phase 1 evaluation script
 
     Args:
         cfg (Config): main config file
-        duration (int, optional): Seconds of simulation to run. Defaults to 6.
+        idx: int: The index of the trajectory to be evaluated. If None, a trajectory is
+        sampled randomly from the evaluation dataset.
         best_model (bool, optional): Use the best saved mode. Defaults to True.
         Uses the final model if False.
     """
@@ -104,7 +105,8 @@ def phase1_eval(cfg: Config, duration: int = 6, best_model: bool = True):
 
     print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
-    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory()
+    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(idx=idx)
+    print("Trajectory Length:", len(t))
 
     position, velocity = [], []
 
@@ -150,7 +152,7 @@ def phase1_eval(cfg: Config, duration: int = 6, best_model: bool = True):
     env.unwrapped.renderer.close()
 
 
-def RMA_DATT_eval(cfg, best_model=True, duration=6):
+def RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
     print("=================================")
     print("Adaptation Evaluation")
 
@@ -239,7 +241,7 @@ def RMA_DATT_eval(cfg, best_model=True, duration=6):
 
     print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
-    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory()
+    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(idx=idx)
 
     position, velocity = [], []
     obs = torch.tensor(obs, dtype=torch.float32).to(device)
@@ -303,7 +305,7 @@ def RMA_DATT_eval(cfg, best_model=True, duration=6):
     env.unwrapped.renderer.close()
 
 
-def paper_phase_1_eval(cfg, best_model=True, duration=6):
+def paper_phase_1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
     # print("=================================")
     # print("Adapt Evaluation")
 
@@ -387,7 +389,7 @@ def paper_phase_1_eval(cfg, best_model=True, duration=6):
 
     # print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
-    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory()
+    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(idx=idx)
 
     position, velocity = [], []
 
@@ -412,7 +414,7 @@ def paper_phase_1_eval(cfg, best_model=True, duration=6):
     return mean_error, rms_error, mass, inertia[0], inertia[1], inertia[2]
 
 
-def paper_RMA_DATT_eval(cfg, best_model=True, duration=6):
+def paper_RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
     # print("=================================")
     # print("Adapt Evaluation")
 
@@ -497,7 +499,7 @@ def paper_RMA_DATT_eval(cfg, best_model=True, duration=6):
 
     # print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
-    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory()
+    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(idx=idx)
 
     position, velocity = [], []
     obs = torch.tensor(obs, dtype=torch.float32).to(device)
