@@ -104,7 +104,7 @@ def phase1_eval(cfg: Config, duration: int = 6, best_model: bool = True):
 
     print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
-    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(duration=duration)
+    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory()
 
     position, velocity = [], []
 
@@ -239,7 +239,7 @@ def RMA_DATT_eval(cfg, best_model=True, duration=6):
 
     print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
-    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(duration=duration)
+    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory()
 
     position, velocity = [], []
     obs = torch.tensor(obs, dtype=torch.float32).to(device)
@@ -381,11 +381,13 @@ def paper_phase_1_eval(cfg, best_model=True, duration=6):
         prop_const=f"Prop Constant:{prop_const}",
         arm_length=f"Arm Length:{arm_length}",
         thrust2weight=f"TWR:{thrust2weight}",
+        mean_error="",
+        rms_error="",
     )
 
     # print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
-    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(duration=duration)
+    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory()
 
     position, velocity = [], []
 
@@ -489,11 +491,13 @@ def paper_RMA_DATT_eval(cfg, best_model=True, duration=6):
         prop_const=f"Prop Constant:{prop_const}",
         arm_length=f"Arm Length:{arm_length}",
         thrust2weight=f"TWR:{thrust2weight}",
+        mean_error="",
+        rms_error="",
     )
 
     # print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
 
-    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(duration=duration)
+    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory()
 
     position, velocity = [], []
     obs = torch.tensor(obs, dtype=torch.float32).to(device)

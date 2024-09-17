@@ -386,19 +386,19 @@ class TrajAviaryv3(BaseAviary):
 
         # TODO: add wind.
 
-    def eval_trajectory(self, duration: int):
+    def eval_trajectory(self, idx=None):
         """Evaluation method that will be called by the eval script to
         generate the trajectory for the evaluation.
         Assumes that eval is set by the config file
 
         Args:
-        durattion: int: The duration of the evaluation in seconds. Duration is ignored in
-        this environment.
+        idx: int: The index of the trajectory to be evaluated. If None, a trajectory is
+        sampled randomly from the evaluation dataset.
         """
 
         eval_trajs = np.load(self.eval_trajectory_path)
 
-        idx = self.np_random.integers(0, eval_trajs.shape[0])
+        idx = self.np_random.integers(0, eval_trajs.shape[0]) if idx is None else idx
         eval_traj = eval_trajs[idx]
         # print("eval traj", eval_traj.shape)
         rows_not_nan = sum(~np.isnan(eval_traj[:, 1]))
