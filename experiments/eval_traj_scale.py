@@ -28,9 +28,13 @@ class Args:
     seed: int = 4551
     agent: str = "RMA_DATT"
     scale: bool = True
+    wind_bool: bool = True
 
 
-env_runs = [["traj_v3", "different-jazz-16"]]
+env_runs = [
+    ["traj_v3", "sweet-feather-28", False],
+    ["traj_v3", "sweet-feather-28", True],
+]
 
 
 def evaluate_per_seed(seed, num_sc_list, sc_list, cfg, idx):
@@ -154,7 +158,7 @@ for env_run in env_runs:
     all_phase_1_results[:] = np.nan
     all_rma_datt_results[:] = np.nan
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
         results = executor.map(
             trajectory_eval_idx,
             range(num_eval_trajs),
@@ -183,5 +187,6 @@ for env_run in env_runs:
     os.makedirs(results_folder, exist_ok=True)
 
     print("Saving results to:", results_folder)
-    np.save(results_folder + "phase_1_traj.npy", all_phase_1_results)
-    np.save(results_folder + "rma_datt_traj.npy", all_rma_datt_results)
+    prefix = "wind_" if args.wind_bool else "no_wind_"
+    np.save(results_folder + prefix + "phase_1_traj.npy", all_phase_1_results)
+    np.save(results_folder + prefix + "rma_datt_traj.npy", all_rma_datt_results)
