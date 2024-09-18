@@ -27,6 +27,7 @@ def ppo_train(args: Config, envs):
     torch.backends.cudnn.deterministic = args.learning.torch_deterministic
 
     print(f"Using seed {args.seed}")
+    prjt_name = args.experiment.wandb_project_name
     grp_name = args.experiment.grp_name
     run_name = args.experiment.run_name
 
@@ -45,7 +46,7 @@ def ppo_train(args: Config, envs):
             ],
         },
     }
-    writer = SummaryWriter(f"runs/{grp_name}/{run_name}/tb")
+    writer = SummaryWriter(f"runs/{prjt_name}/{grp_name}/{run_name}/tb")
     writer.add_custom_scalars(layout)
     writer.add_text(
         "hyperparameters",
@@ -85,7 +86,9 @@ def ppo_train(args: Config, envs):
     if args.warm_start:
         if args.warm_model is None:
             raise ValueError("Warm start requested but no model provided")
-        warm_model_path = f"runs/{grp_name}/{args.warm_model}/final_model.pt"
+        warm_model_path = (
+            f"runs/{prjt_name}/{grp_name}/{args.warm_model}/final_model.pt"
+        )
         agent.load_state_dict(torch.load(warm_model_path))
         agent.traj_encoder.requires_grad_(False)
         agent.env_encoder.requires_grad_(False)
@@ -192,9 +195,7 @@ def ppo_train(args: Config, envs):
                             if current_avg_reward > best_avg_reward:
                                 best_avg_reward = current_avg_reward
                                 if args.learning.save_model:
-                                    model_path = (
-                                        f"runs/{grp_name}/{run_name}/best_model.pt"
-                                    )
+                                    model_path = f"runs/{prjt_name}/{grp_name}/{run_name}/best_model.pt"
                                     torch.save(agent.state_dict(), model_path)
                             writer.add_scalar(
                                 "charts/episodic_length",
@@ -347,7 +348,7 @@ def ppo_train(args: Config, envs):
         writer.add_scalar("losses/total_loss", loss.item(), global_step)
 
     if args.learning.save_model:
-        model_path = f"runs/{grp_name}/{run_name}/final_model.pt"
+        model_path = f"runs/{prjt_name}/{grp_name}/{run_name}/final_model.pt"
         torch.save(agent.state_dict(), model_path)
         print(f"Model saved at {model_path}")
 

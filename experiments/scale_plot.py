@@ -28,7 +28,14 @@ cfg = Config(
     agent=args.agent,
     scale=args.scale,
 )
-run_folder = "runs/" + cfg.grp_name + "/" + cfg.run_name + "/"
+run_folder = (
+    "runs/"
+    + cfg.experiment.wandb_project_name
+    + cfg.grp_name
+    + "/"
+    + cfg.run_name
+    + "/"
+)
 results_folder = run_folder + "results-icra/"
 
 phase_1_results = np.load(results_folder + "phase_1_scale.npy")

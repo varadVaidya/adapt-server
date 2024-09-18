@@ -92,7 +92,14 @@ for env_run in env_runs:
 
             rma_datt_results[i, j, :] = current_results
 
-    run_folder = "runs/" + cfg.grp_name + "/" + cfg.run_name + "/"
+    run_folder = (
+        "runs/"
+        + cfg.experiment.wandb_project_name
+        + cfg.grp_name
+        + "/"
+        + cfg.run_name
+        + "/"
+    )
     results_folder = run_folder + "results-icra/"
 
     os.makedirs(results_folder, exist_ok=True)

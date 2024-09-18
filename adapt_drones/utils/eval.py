@@ -38,7 +38,15 @@ def phase1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
     rng = np.random.default_rng(seed=cfg.seed)
 
     # load the model
-    run_folder = "runs/" + cfg.grp_name + "/" + cfg.run_name + "/"
+    run_folder = (
+        "runs/"
+        + cfg.experiment.wandb_project_name
+        + "/"
+        + cfg.grp_name
+        + "/"
+        + cfg.run_name
+        + "/"
+    )
     results_folder = run_folder + "results/"
     archive_folder = run_folder + "archive/"
     datadump_folder = results_folder + "datadump/"
@@ -165,7 +173,15 @@ def RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True)
     rng = np.random.default_rng(seed=cfg.seed)
 
     # load the model
-    run_folder = "runs/" + cfg.grp_name + "/" + cfg.run_name + "/"
+    run_folder = (
+        "runs/"
+        + cfg.experiment.wandb_project_name
+        + "/"
+        + cfg.grp_name
+        + "/"
+        + cfg.run_name
+        + "/"
+    )
     results_folder = run_folder + "results/"
     archive_folder = run_folder + "archive/"
     datadump_folder = results_folder + "datadump/"
@@ -322,7 +338,15 @@ def paper_phase_1_eval(
 
     rng = np.random.default_rng(seed=cfg.seed)
 
-    run_folder = "runs/" + cfg.grp_name + "/" + cfg.run_name + "/"
+    run_folder = (
+        "runs/"
+        + cfg.experiment.wandb_project_name
+        + "/"
+        + cfg.grp_name
+        + "/"
+        + cfg.run_name
+        + "/"
+    )
     results_folder = run_folder + "results-icra/"
     datadump_folder = results_folder + "datadump/"
 
@@ -439,7 +463,15 @@ def paper_RMA_DATT_eval(
 
     rng = np.random.default_rng(seed=cfg.seed)
 
-    run_folder = "runs/" + cfg.grp_name + "/" + cfg.run_name + "/"
+    run_folder = (
+        "runs/"
+        + cfg.experiment.wandb_project_name
+        + "/"
+        + cfg.grp_name
+        + "/"
+        + cfg.run_name
+        + "/"
+    )
     results_folder = run_folder + "results-icra/"
     datadump_folder = results_folder + "datadump/"
 
