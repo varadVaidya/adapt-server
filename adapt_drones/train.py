@@ -29,7 +29,13 @@ class Args:
 
 
 args = tyro.cli(Args)
-cfg = Config(env_id=args.env_id, seed=args.seed, scale=args.scale, agent=args.agent)
+cfg = Config(
+    env_id=args.env_id,
+    seed=args.seed,
+    tests=True,
+    agent=args.agent,
+    wind_bool=args.wind_bool,
+)
 
 # set random seeds
 random.seed(cfg.seed)
