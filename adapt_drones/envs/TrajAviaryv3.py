@@ -140,7 +140,6 @@ class TrajAviaryv3(BaseAviary):
                 -self.cfg.environment.max_wind,
                 self.cfg.environment.max_wind,
             )
-        print(self.model.opt.wind)
         obs, reward, terminated, truncated, info = super().step(action)
         self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
