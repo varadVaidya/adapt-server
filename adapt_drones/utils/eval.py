@@ -73,7 +73,7 @@ def phase1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
             state_shape=env.observation_space.shape,
             action_shape=env.action_space.shape,
         ).to(device)
-        agent.load_state_dict(torch.load(model_path))
+        agent.load_state_dict(torch.load(model_path, weights_only=True))
 
     elif cfg.agent == "RMA_DATT":
         agent = RMA_DATT(
@@ -82,7 +82,7 @@ def phase1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
             traj_shape=env.unwrapped.reference_traj_shape,
             action_shape=env.action_space.shape,
         ).to(device)
-        agent.load_state_dict(torch.load(model_path))
+        agent.load_state_dict(torch.load(model_path, weights_only=True))
     else:
         raise ValueError("Invalid agent type")
 
@@ -217,7 +217,7 @@ def RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True)
         action_shape=action_shape,
     ).to(device)
 
-    agent.load_state_dict(torch.load(model_path))
+    agent.load_state_dict(torch.load(model_path, weights_only=True))
     agent.eval()
 
     state_action_shape = state_shape + action_shape
@@ -227,7 +227,7 @@ def RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True)
     adapt_output = cfg.network.env_encoder_output
 
     adapt_net = AdaptationNetwork(adapt_input, adapt_output).to(device)
-    adapt_net.load_state_dict(torch.load(adapt_path))
+    adapt_net.load_state_dict(torch.load(adapt_path, weights_only=True))
 
     state_action_buffer = torch.zeros(state_action_shape, time_horizon).to(device)
 
@@ -369,7 +369,7 @@ def paper_phase_1_eval(
             state_shape=env.observation_space.shape,
             action_shape=env.action_space.shape,
         ).to(device)
-        agent.load_state_dict(torch.load(model_path))
+        agent.load_state_dict(torch.load(model_path, weights_only=True))
 
     elif cfg.agent == "RMA_DATT":
         agent = RMA_DATT(
@@ -378,7 +378,7 @@ def paper_phase_1_eval(
             traj_shape=env.unwrapped.reference_traj_shape,
             action_shape=env.action_space.shape,
         ).to(device)
-        agent.load_state_dict(torch.load(model_path))
+        agent.load_state_dict(torch.load(model_path, weights_only=True))
     else:
         raise ValueError("Invalid agent type")
 
@@ -504,7 +504,7 @@ def paper_RMA_DATT_eval(
         action_shape=action_shape,
     ).to(device)
 
-    agent.load_state_dict(torch.load(model_path))
+    agent.load_state_dict(torch.load(model_path, weights_only=True))
     agent.eval()
 
     state_action_shape = state_shape + action_shape
@@ -514,7 +514,7 @@ def paper_RMA_DATT_eval(
     adapt_output = cfg.network.env_encoder_output
 
     adapt_net = AdaptationNetwork(adapt_input, adapt_output).to(device)
-    adapt_net.load_state_dict(torch.load(adapt_path))
+    adapt_net.load_state_dict(torch.load(adapt_path, weights_only=True))
 
     state_action_buffer = torch.zeros(state_action_shape, time_horizon).to(device)
 

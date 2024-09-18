@@ -106,7 +106,7 @@ def adapt_train_datt_rma(cfg: Config, envs, best_model: bool = True):
         action_shape=action_shape,
     ).to(device)
 
-    agent.load_state_dict(torch.load(model_path))
+    agent.load_state_dict(torch.load(model_path, weights_only=True))
     agent.eval()
 
     # init the adaptation network

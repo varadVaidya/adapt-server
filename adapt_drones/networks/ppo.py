@@ -89,7 +89,7 @@ def ppo_train(args: Config, envs):
         warm_model_path = (
             f"runs/{prjt_name}/{grp_name}/{args.warm_model}/final_model.pt"
         )
-        agent.load_state_dict(torch.load(warm_model_path))
+        agent.load_state_dict(torch.load(warm_model_path, weights_only=True))
         agent.traj_encoder.requires_grad_(False)
         agent.env_encoder.requires_grad_(False)
         print(f"Loaded model from {warm_model_path}")
