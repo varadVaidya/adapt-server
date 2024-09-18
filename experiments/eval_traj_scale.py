@@ -158,7 +158,7 @@ for env_run in env_runs:
     all_phase_1_results[:] = np.nan
     all_rma_datt_results[:] = np.nan
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
         results = executor.map(
             trajectory_eval_idx,
             range(num_eval_trajs),
