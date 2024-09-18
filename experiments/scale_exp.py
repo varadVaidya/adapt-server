@@ -28,7 +28,7 @@ class Args:
     scale: bool = True
 
 
-env_runs = [["traj_v3", "different-jazz-16"]]
+env_runs = [["traj_v3", "apricot-shape-18"]]
 
 for env_run in env_runs:
     args = Args(env_id=env_run[0], run_name=env_run[1])
@@ -98,5 +98,5 @@ for env_run in env_runs:
     os.makedirs(results_folder, exist_ok=True)
 
     print("Saving results to:", results_folder)
-    np.save(results_folder + "phase_1_results.npy", phase_1_results)
-    np.save(results_folder + "rma_datt_results.npy", rma_datt_results)
+    np.save(results_folder + "phase_1_scale.npy", phase_1_results)
+    np.save(results_folder + "rma_datt_scale.npy", rma_datt_results)

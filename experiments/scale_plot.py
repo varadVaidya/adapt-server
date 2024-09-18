@@ -12,7 +12,7 @@ from adapt_drones.cfgs.config import *
 @dataclass
 class Args:
     env_id: str = "traj_v3"
-    run_name: str = "different-jazz-16"
+    run_name: str = "apricot-shape-18"
     seed: int = 20240915
     agent: str = "RMA_DATT"
     scale: bool = True
@@ -31,8 +31,8 @@ cfg = Config(
 run_folder = "runs/" + cfg.grp_name + "/" + cfg.run_name + "/"
 results_folder = run_folder + "results-icra/"
 
-phase_1_results = np.load(results_folder + "phase_1_results.npy")
-RMA_DATT_results = np.load(results_folder + "rma_datt_results.npy")
+phase_1_results = np.load(results_folder + "phase_1_scale.npy")
+RMA_DATT_results = np.load(results_folder + "rma_datt_scale.npy")
 
 idx_sort_phase = np.argsort(np.mean(phase_1_results[:, :, 2], axis=1))
 sorted_phase_1 = phase_1_results[idx_sort_phase]
