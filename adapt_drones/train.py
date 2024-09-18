@@ -104,6 +104,15 @@ envs = gym.vector.SyncVectorEnv(
 )
 adapt_train_datt_rma(adapt_cfg, envs)
 
-with open("runs/" + cfg.grp_name + "/" + cfg.run_name + "/config.yaml", "w") as f:
+with open(
+    "runs/"
+    + cfg.experiment.wandb_project_name
+    + "/"
+    + cfg.grp_name
+    + "/"
+    + cfg.run_name
+    + "/config.yaml",
+    "w",
+) as f:
     yaml.dump(asdict(cfg), f)
     f.close()
