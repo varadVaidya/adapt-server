@@ -18,11 +18,18 @@ from adapt_drones.networks.ppo import ppo_train
 class Args:
     env_id: str
     seed: int = 15092024
+    wind_bool: bool = True
     agent: str = "RMA_DATT"
 
 
 args = tyro.cli(Args)
-cfg = Config(env_id=args.env_id, seed=args.seed, tests=True, agent=args.agent)
+cfg = Config(
+    env_id=args.env_id,
+    seed=args.seed,
+    tests=True,
+    agent=args.agent,
+    wind_bool=args.wind_bool,
+)
 
 # set random seeds
 random.seed(cfg.seed)

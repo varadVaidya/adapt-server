@@ -132,6 +132,15 @@ class TrajAviaryv3(BaseAviary):
         """
         Extendeds the step method in the BaseAviary class to include action buffer
         """
+        if self.cfg.environment.wind_bool:
+            # change the wind slightly
+            self.model.opt.wind += self.np_random.normal(0, 0.01, 3)
+            self.model.opt.wind = np.clip(
+                self.model.opt.wind,
+                -self.cfg.environment.max_wind,
+                self.cfg.environment.max_wind,
+            )
+        print(self.model.opt.wind)
         obs, reward, terminated, truncated, info = super().step(action)
         self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
@@ -385,6 +394,12 @@ class TrajAviaryv3(BaseAviary):
         mujoco.mj_setConst(self.model, self.data)
 
         # TODO: add wind.
+        wind_magnitude = self.np_random.uniform(
+            self.cfg.environment.wind_speed[0], self.cfg.environment.wind_speed[1]
+        )
+        wind_direction = self.np_random.uniform(-1, 1, 3)
+        wind_direction = wind_direction / np.linalg.norm(wind_direction)
+        self.model.opt.wind = wind_magnitude * wind_direction
 
     def eval_trajectory(self, idx=None):
         """Evaluation method that will be called by the eval script to

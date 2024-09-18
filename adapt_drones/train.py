@@ -23,6 +23,7 @@ check_git_clean()
 class Args:
     env_id: str
     scale: bool = True
+    wind_bool: bool = True
     seed: int = 15092024
     agent: str = "RMA_DATT"
 

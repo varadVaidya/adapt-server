@@ -18,12 +18,16 @@ from adapt_drones.cfgs.config import *
 class Args:
     env_id: str
     seed: int = 15092024
+    wind_bool: bool = True
     agent: str = "RMA_DATT"
 
 
 args = tyro.cli(Args)
 
-cfg = Config(env_id=args.env_id, seed=args.seed, agent=args.agent)
+cfg = Config(
+    env_id=args.env_id, seed=args.seed, agent=args.agent, wind_bool=args.wind_bool
+)
+print(cfg.environment)
 env = gym.make(args.env_id, cfg=cfg, record=True)
 env = gym.wrappers.FlattenObservation(env)
 env = gym.wrappers.RecordEpisodeStatistics(env)
