@@ -26,13 +26,27 @@ class Args:
     seed: int = 4551
     agent: str = "RMA_DATT"
     scale: bool = True
+    wind_bool: bool = True
 
 
-env_runs = [["traj_v3", "apricot-shape-18"]]
+env_runs = [
+    ["traj_v3", "sweet-feather-28", False],
+    ["traj_v3", "sweet-feather-28", True],
+    ["traj_v3", "good-shadow-27", False],
+    ["traj_v3", "good-shadow-27", True],
+]
 
-for env_run in env_runs:
-    args = Args(env_id=env_run[0], run_name=env_run[1])
-    print("Running for env:", args.env_id, "run_name:", args.run_name)
+
+def single_env_run(env_run):
+    args = Args(env_id=env_run[0], run_name=env_run[1], wind_bool=env_run[2])
+    print(
+        "Running for env:",
+        args.env_id,
+        "run_name:",
+        args.run_name,
+        "wind_bool:",
+        args.wind_bool,
+    )
 
     cfg = Config(
         env_id=args.env_id,
@@ -41,6 +55,7 @@ for env_run in env_runs:
         run_name=args.run_name,
         agent=args.agent,
         scale=args.scale,
+        wind_bool=args.wind_bool,
     )
 
     current_branch_name = (
@@ -105,5 +120,12 @@ for env_run in env_runs:
     os.makedirs(results_folder, exist_ok=True)
 
     print("Saving results to:", results_folder)
-    np.save(results_folder + "phase_1_scale.npy", phase_1_results)
-    np.save(results_folder + "rma_datt_scale.npy", rma_datt_results)
+    prefix = "wind_" if args.wind_bool else "nowind_"
+    np.save(results_folder + prefix + "phase_1_scale.npy", phase_1_results)
+    np.save(results_folder + prefix + "rma_datt_scale.npy", rma_datt_results)
+
+
+for env_run in env_runs:
+    # single_env_run(env_run)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+        executor.map(single_env_run, env_runs)
