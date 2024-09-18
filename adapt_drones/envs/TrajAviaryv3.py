@@ -376,7 +376,15 @@ class TrajAviaryv3(BaseAviary):
 
         com = np.hstack((com_xy, com_z))
         self.model.body_ipos = com  # drone com
-        self.model.site_pos[self.com_site_id] = com  # thrust com
+
+        # thrust offset 5% of the arm length in xy and 2.5% in z
+        thrust_offset = 0.05 * L
+        thrust_xy = self.np_random.uniform(-thrust_offset, thrust_offset, 2)
+        thrust_offset = 0.025 * L
+        thrust_z = self.np_random.uniform(-thrust_offset, thrust_offset, 1)
+
+        thrust = np.hstack((thrust_xy, thrust_z))
+        self.model.site_pos[self.com_site_id] = thrust  # thrust site
 
         # km_kf
         _km_kf_avg = np.polyval(self.cfg.scale.avg_km_kf_fit, L)
