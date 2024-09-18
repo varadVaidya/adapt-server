@@ -32,7 +32,7 @@ args = tyro.cli(Args)
 cfg = Config(
     env_id=args.env_id,
     seed=args.seed,
-    tests=True,
+    scale=args.scale,
     agent=args.agent,
     wind_bool=args.wind_bool,
 )
