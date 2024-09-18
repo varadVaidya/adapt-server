@@ -19,6 +19,7 @@ class Config:
     grp_name: str
     run_name: str
     agent: str
+    wind_bool: bool
     warm_start: bool
     warm_model: [str, None]
 
@@ -39,6 +40,7 @@ class Config:
         eval=False,
         seed=1,
         scale=True,
+        wind_bool=True,
         env_id="hover_v0",
         tests=False,
         grp_name="default",
@@ -66,6 +68,7 @@ class Config:
         self.agent = agent
         self.warm_start = warm_start
         self.warm_model = warm_model
+        self.wind_bool = wind_bool
 
         if not tests:
             grp_name = env_id + "-" + agent
@@ -90,9 +93,15 @@ class Config:
         }
 
         try:
-            self.environment = env_maps[env_id](eval=eval, scale=scale)
-            if agent not in self.environment.agent_name:
-                raise ValueError("Provided agent does not match required agent")
+            try:
+                self.environment = env_maps[env_id](
+                    eval=eval, scale=scale, wind_bool=wind_bool
+                )
+            except TypeError:
+                self.environment = env_maps[env_id](eval=eval, scale=scale)
+            finally:
+                if agent not in self.environment.agent_name:
+                    raise ValueError("Provided agent does not match required agent")
         except KeyError:
             raise ValueError(f"Environment {env_id} not found in env_maps")
 
