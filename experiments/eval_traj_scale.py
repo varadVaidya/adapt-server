@@ -96,7 +96,7 @@ def trajectory_eval_idx(idx, num_seeds, seeds, num_sc_list, sc_list, cfg):
     phase_1_results = np.zeros((num_seeds, num_sc_list, 9))
     rma_datt_results = np.zeros((num_seeds, num_sc_list, 9))
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=6) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
         results = executor.map(
             evaluate_per_seed,
             seeds,
@@ -165,7 +165,7 @@ for env_run in env_runs:
     all_phase_1_results[:] = np.nan
     all_rma_datt_results[:] = np.nan
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
         results = executor.map(
             trajectory_eval_idx,
             range(num_eval_trajs),
@@ -184,6 +184,7 @@ for env_run in env_runs:
     run_folder = (
         "runs/"
         + cfg.experiment.wandb_project_name
+        + "/"
         + cfg.grp_name
         + "/"
         + cfg.run_name
