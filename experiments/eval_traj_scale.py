@@ -33,7 +33,6 @@ class Args:
 
 env_runs = [
     ["traj_v3", "sweet-feather-28", False],
-    ["traj_v3", "sweet-feather-28", True],
 ]
 
 
@@ -115,8 +114,15 @@ def trajectory_eval_idx(idx, num_seeds, seeds, num_sc_list, sc_list, cfg):
 
 
 for env_run in env_runs:
-    args = Args(env_id=env_run[0], run_name=env_run[1])
-    print("Running for env:", args.env_id, "run_name:", args.run_name)
+    args = Args(env_id=env_run[0], run_name=env_run[1], wind_bool=env_run[2])
+    print(
+        "Running for env:",
+        args.env_id,
+        "run_name:",
+        args.run_name,
+        "wind_bool:",
+        args.wind_bool,
+    )
 
     cfg = Config(
         env_id=args.env_id,
@@ -125,6 +131,7 @@ for env_run in env_runs:
         run_name=args.run_name,
         agent=args.agent,
         scale=args.scale,
+        wind_bool=args.wind_bool,
     )
 
     current_branch_name = (
