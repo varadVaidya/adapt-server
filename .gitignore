@@ -172,3 +172,4 @@ adapt_drones/utils/sweep_ids.yaml
 adapt_drones/assets/slow_pi_tcn_eval.npy
 adapt_drones/assets/slow_pi_tcn_train.npy
 .vscode
+runs_tmp
