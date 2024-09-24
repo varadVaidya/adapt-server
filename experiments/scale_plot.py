@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-plt.style.use("seaborn-v0_8")
+plt.style.use("seaborn-v0_8-deep")
 
 # latex settings for matplotlib
 from dataclasses import dataclass
@@ -12,10 +12,11 @@ from adapt_drones.cfgs.config import *
 @dataclass
 class Args:
     env_id: str = "traj_v3"
-    run_name: str = "apricot-shape-18"
+    run_name: str = "sweet-feather-28"
     seed: int = 20240915
     agent: str = "RMA_DATT"
     scale: bool = True
+    wind_bool: bool = True
 
 
 args = tyro.cli(Args)
@@ -31,15 +32,16 @@ cfg = Config(
 run_folder = (
     "runs/"
     + cfg.experiment.wandb_project_name
+    + "/"
     + cfg.grp_name
     + "/"
     + cfg.run_name
     + "/"
 )
 results_folder = run_folder + "results-icra/"
-
-phase_1_results = np.load(results_folder + "phase_1_scale.npy")
-RMA_DATT_results = np.load(results_folder + "rma_datt_scale.npy")
+prefix = "wind_" if args.wind_bool else "nowind_"
+phase_1_results = np.load(results_folder + prefix + "phase_1_scale.npy")
+RMA_DATT_results = np.load(results_folder + prefix + "phase_1_scale.npy")
 
 idx_sort_phase = np.argsort(np.mean(phase_1_results[:, :, 2], axis=1))
 sorted_phase_1 = phase_1_results[idx_sort_phase]
@@ -86,6 +88,7 @@ axs["main"].errorbar(
 # )
 # axs["main"].set_xlabel("Arm Length")
 axs["main"].set_ylabel("Mean Position Error (m)")
+axs["main"].grid()
 
 mean_mass = np.mean(phase_1[:, :, 4], axis=0)
 std_mass = np.std(phase_1[:, :, 4], axis=0)
@@ -100,6 +103,7 @@ axs["mass"].errorbar(
     capthick=1,
 )
 axs["mass"].set_ylabel("Mass (kg)")
+axs["mass"].grid()
 
 mean_ixx = np.mean(phase_1[:, :, 5], axis=0)
 std_ixx = np.std(phase_1[:, :, 5], axis=0)
@@ -115,6 +119,7 @@ axs["ixx"].errorbar(
 )
 axs["ixx"].set_ylabel("Ixx (kg m^2)")
 axs["ixx"].ticklabel_format(axis="y", style="sci", scilimits=(-2, -2))
+axs["ixx"].grid()
 
 mean_iyy = np.mean(phase_1[:, :, 6], axis=0)
 std_iyy = np.std(phase_1[:, :, 6], axis=0)
@@ -130,6 +135,7 @@ axs["iyy"].errorbar(
 )
 axs["iyy"].set_ylabel("Iyy (kg m^2)")
 axs["iyy"].ticklabel_format(axis="y", style="sci", scilimits=(-2, -2))
+axs["iyy"].grid()
 
 mean_izz = np.mean(phase_1[:, :, 7], axis=0)
 std_izz = np.std(phase_1[:, :, 7], axis=0)
@@ -145,7 +151,7 @@ axs["izz"].errorbar(
 )
 axs["izz"].set_ylabel("Izz (kg m^2)")
 axs["izz"].ticklabel_format(axis="y", style="sci", scilimits=(-2, -2))
-
+axs["izz"].grid()
 plt.xlabel("Arm Length (m)")
 
 plt.savefig(results_folder + "phase_1_plot.png")
@@ -197,6 +203,7 @@ axs["main"].errorbar(
 # )
 # axs["main"].set_xlabel("Arm Length")
 axs["main"].set_ylabel("Mean Position Error (m)")
+axs["main"].grid()
 
 mean_mass = np.mean(rma_datt[:, :, 4], axis=0)
 std_mass = np.std(rma_datt[:, :, 4], axis=0)
@@ -211,6 +218,7 @@ axs["mass"].errorbar(
     capthick=1,
 )
 axs["mass"].set_ylabel("Mass (kg)")
+axs["mass"].grid()
 
 mean_ixx = np.mean(rma_datt[:, :, 5], axis=0)
 std_ixx = np.std(rma_datt[:, :, 5], axis=0)
@@ -226,6 +234,7 @@ axs["ixx"].errorbar(
 )
 axs["ixx"].set_ylabel("Ixx (kg m^2)")
 axs["ixx"].ticklabel_format(axis="y", style="sci", scilimits=(-2, -2))
+axs["ixx"].grid()
 
 mean_iyy = np.mean(rma_datt[:, :, 6], axis=0)
 std_iyy = np.std(rma_datt[:, :, 6], axis=0)
@@ -241,6 +250,7 @@ axs["iyy"].errorbar(
 )
 axs["iyy"].set_ylabel("Iyy (kg m^2)")
 axs["iyy"].ticklabel_format(axis="y", style="sci", scilimits=(-2, -2))
+axs["iyy"].grid()
 
 mean_izz = np.mean(rma_datt[:, :, 7], axis=0)
 std_izz = np.std(rma_datt[:, :, 7], axis=0)
@@ -256,6 +266,7 @@ axs["izz"].errorbar(
 )
 axs["izz"].set_ylabel("Izz (kg m^2)")
 axs["izz"].ticklabel_format(axis="y", style="sci", scilimits=(-2, -2))
+axs["izz"].grid()
 
 plt.xlabel("Arm Length (m)")
 

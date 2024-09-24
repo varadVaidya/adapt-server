@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-plt.style.use("seaborn-v0_8")
+plt.style.use("seaborn-v0_8-deep")
 
 # latex settings for matplotlib
 from dataclasses import dataclass
@@ -102,15 +102,17 @@ data_compile_rma_datt[:, 6] = np.std(rma_datt[:, :, :, 3], axis=1).reshape(
 )
 
 print("Saving data to:", results_folder)
-np.save(results_folder +prefix+ "traj_eval_compile_phase_1.npy", data_compile_phase_1)
+np.save(results_folder + prefix + "traj_eval_compile_phase_1.npy", data_compile_phase_1)
 np.savetxt(
-    results_folder +prefix+ "traj_eval_compile_phase_1.csv",
+    results_folder + prefix + "traj_eval_compile_phase_1.csv",
     data_compile_phase_1,
     delimiter=",",
 )
-np.save(results_folder +prefix+ "traj_eval_compile_rma_datt.npy", data_compile_rma_datt)
+np.save(
+    results_folder + prefix + "traj_eval_compile_rma_datt.npy", data_compile_rma_datt
+)
 np.savetxt(
-    results_folder +prefix+ "traj_eval_compile_rma_datt.csv",
+    results_folder + prefix + "traj_eval_compile_rma_datt.csv",
     data_compile_rma_datt,
     delimiter=",",
 )
