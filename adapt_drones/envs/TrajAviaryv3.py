@@ -140,6 +140,11 @@ class TrajAviaryv3(BaseAviary):
                 -self.cfg.environment.max_wind,
                 self.cfg.environment.max_wind,
             )
+
+        # add action noise to the action
+        action += self.np_random.normal(0, 0.015, 4)
+        action = np.clip(action, -1, 1)
+
         obs, reward, terminated, truncated, info = super().step(action)
         self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
@@ -166,10 +171,17 @@ class TrajAviaryv3(BaseAviary):
         delta_pos = self.target_position - self.position
         delta_vel = self.target_velocity - self.velocity
 
+        ## add gaussian 0 mean noise to delta_pos and delta_vel
+        delta_pos += self.np_random.normal(0, 0.02, 3)
+        delta_vel += self.np_random.normal(0, 0.02, 3)
+
         delta_ori = np.zeros(3)
-        mujoco.mju_subQuat(delta_ori, self.quat, np.array([1.0, 0.0, 0.0, 0.0]))
+        quat = self.quat + self.np_random.normal(0, 0.01, 4)
+        quat = quat / np.linalg.norm(quat)
+        mujoco.mju_subQuat(delta_ori, quat, np.array([1.0, 0.0, 0.0, 0.0]))
 
         delta_angular_vel = np.zeros(3) - self.angular_velocity
+        delta_angular_vel += self.np_random.normal(0, 0.001, 3)
 
         priv_info = self.get_dynamics_info()
 
