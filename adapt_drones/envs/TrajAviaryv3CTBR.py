@@ -6,14 +6,14 @@ import gymnasium as gym
 from gymnasium import spaces
 from collections import OrderedDict
 
-from adapt_drones.envs.BaseAviary import BaseAviary
+from adapt_drones.envs.BaseAviaryCTBR import BaseAviaryCTBR
 from adapt_drones.cfgs.config import Config
 import adapt_drones.utils.rotation as rotation
 import adapt_drones.utils.rewards as rewards
 import adapt_drones.utils.visuals as visuals
 
 
-class TrajAviaryv3(BaseAviary):
+class TrajAviaryv3CTBR(BaseAviaryCTBR):
     """
     Tracks the trajectory from slowed PITCN dataset.
     """
@@ -132,23 +132,10 @@ class TrajAviaryv3(BaseAviary):
         """
         Extendeds the step method in the BaseAviary class to include action buffer
         """
-        if self.cfg.environment.wind_bool:
-            # change the wind slightly
-            self.model.opt.wind += self.np_random.normal(0, 0.01, 3)
-            self.model.opt.wind = np.clip(
-                self.model.opt.wind,
-                -self.cfg.environment.max_wind,
-                self.cfg.environment.max_wind,
-            )
-
-        # add action noise to the action
-        action += self.np_random.normal(0, 0.015, 4)
-        action = np.clip(action, -1, 1)
-
         obs, reward, terminated, truncated, info = super().step(action)
         self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
-        return obs, reward, truncated, False, info
+        return obs, reward, terminated, truncated, info
 
     def _compute_obs(self):
         """
@@ -171,17 +158,10 @@ class TrajAviaryv3(BaseAviary):
         delta_pos = self.target_position - self.position
         delta_vel = self.target_velocity - self.velocity
 
-        ## add gaussian 0 mean noise to delta_pos and delta_vel
-        delta_pos += self.np_random.normal(0, 0.02, 3)
-        delta_vel += self.np_random.normal(0, 0.02, 3)
-
         delta_ori = np.zeros(3)
-        quat = self.quat + self.np_random.normal(0, 0.01, 4)
-        quat = quat / np.linalg.norm(quat)
-        mujoco.mju_subQuat(delta_ori, quat, np.array([1.0, 0.0, 0.0, 0.0]))
+        mujoco.mju_subQuat(delta_ori, self.quat, np.array([1.0, 0.0, 0.0, 0.0]))
 
         delta_angular_vel = np.zeros(3) - self.angular_velocity
-        delta_angular_vel += self.np_random.normal(0, 0.001, 3)
 
         priv_info = self.get_dynamics_info()
 
@@ -388,15 +368,7 @@ class TrajAviaryv3(BaseAviary):
 
         com = np.hstack((com_xy, com_z))
         self.model.body_ipos = com  # drone com
-
-        # thrust offset 5% of the arm length in xy and 2.5% in z
-        thrust_offset = 0.05 * L
-        thrust_xy = self.np_random.uniform(-thrust_offset, thrust_offset, 2)
-        thrust_offset = 0.025 * L
-        thrust_z = self.np_random.uniform(-thrust_offset, thrust_offset, 1)
-
-        thrust = np.hstack((thrust_xy, thrust_z))
-        self.model.site_pos[self.com_site_id] = thrust  # thrust site
+        self.model.site_pos[self.com_site_id] = com  # thrust com
 
         # km_kf
         _km_kf_avg = np.polyval(self.cfg.scale.avg_km_kf_fit, L)
@@ -413,26 +385,20 @@ class TrajAviaryv3(BaseAviary):
         mujoco.mj_setConst(self.model, self.data)
 
         # TODO: add wind.
-        wind_magnitude = self.np_random.uniform(
-            self.cfg.environment.wind_speed[0], self.cfg.environment.wind_speed[1]
-        )
-        wind_direction = self.np_random.uniform(-1, 1, 3)
-        wind_direction = wind_direction / np.linalg.norm(wind_direction)
-        self.model.opt.wind = wind_magnitude * wind_direction
 
-    def eval_trajectory(self, idx=None):
+    def eval_trajectory(self, duration: int):
         """Evaluation method that will be called by the eval script to
         generate the trajectory for the evaluation.
         Assumes that eval is set by the config file
 
         Args:
-        idx: int: The index of the trajectory to be evaluated. If None, a trajectory is
-        sampled randomly from the evaluation dataset.
+        durattion: int: The duration of the evaluation in seconds. Duration is ignored in
+        this environment.
         """
 
         eval_trajs = np.load(self.eval_trajectory_path)
 
-        idx = self.np_random.integers(0, eval_trajs.shape[0]) if idx is None else idx
+        idx = self.np_random.integers(0, eval_trajs.shape[0])
         eval_traj = eval_trajs[idx]
         # print("eval traj", eval_traj.shape)
         rows_not_nan = sum(~np.isnan(eval_traj[:, 1]))
@@ -483,12 +449,3 @@ class TrajAviaryv3(BaseAviary):
             )
             frame = self.renderer.render()
             self._frames.append(frame)
-
-
-if __name__ == "__main__":
-    cfg = Config()
-    env = HoverAviaryv0(cfg)
-    env.reset()
-    env.eval_trajectory(10)
-    # env.step(env.action_space.sample())
-    # env.close()
