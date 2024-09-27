@@ -155,7 +155,7 @@ for env_run in env_runs:
     print("Number of eval trajs:", num_eval_trajs)
 
     # create a list of seeds by incrementing cfg.seed by 1
-    num_seeds = 30
+    num_seeds = 16
     seeds = [cfg.seed + i for i in range(num_seeds)]
     print("Seeds:", seeds)
 
