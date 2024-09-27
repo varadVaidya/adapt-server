@@ -123,7 +123,7 @@ def single_env_run(env_run):
     current_results = np.zeros(8)
 
     # single_seed_run(seeds[0], num_sc_list, sc_list, cfg)
-    with concurrent.futures.ProcessPoolExecutor(max_workers=20) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
         results = executor.map(
             single_seed_run,
             seeds,
