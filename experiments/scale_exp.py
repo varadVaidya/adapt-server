@@ -3,6 +3,8 @@ import random
 import subprocess
 from dataclasses import dataclass
 import concurrent.futures
+from itertools import repeat
+import time
 
 os.environ["MUJOCO_GL"] = "egl"
 
@@ -32,9 +34,40 @@ class Args:
 env_runs = [
     ["traj_v3", "sweet-feather-28", False],
     ["traj_v3", "sweet-feather-28", True],
-    ["traj_v3", "good-shadow-27", False],
-    ["traj_v3", "good-shadow-27", True],
+    # ["traj_v3", "good-shadow-27", False],
+    # ["traj_v3", "good-shadow-27", True],
 ]
+
+
+def single_seed_run(seed, num_sc_list, sc_list, cfg):
+    current_results = np.zeros(8)
+    phase_1_results = np.zeros((num_sc_list, 8))
+    rma_datt_results = np.zeros((num_sc_list, 8))
+    for i, _scale in enumerate(sc_list):
+        print("Evaluating seed:", seed, "scale:", _scale, "at time:", time.asctime())
+        cfg.seed = seed
+        cfg.environment.scale_lengths = _scale
+        cfg.scale.scale_lengths = _scale
+        # print("-----------==========++++++++++==========-----------")
+        results = paper_phase_1_eval(cfg=cfg, best_model=True)
+        current_results[0] = _scale[0]
+        current_results[1] = seed
+        current_results[2:] = results
+
+        phase_1_results[i, :] = current_results
+        # print("-----------==========++++++++++==========-----------")
+
+        results = paper_RMA_DATT_eval(cfg=cfg, best_model=True)
+        current_results[0] = _scale[0]
+        current_results[1] = seed
+        current_results[2:] = results
+
+        rma_datt_results[i, :] = current_results
+        print(
+            "Done evaluating seed:", seed, "scale:", _scale, "at time:", time.asctime()
+        )
+
+    return seed, phase_1_results, rma_datt_results
 
 
 def single_env_run(env_run):
@@ -86,30 +119,24 @@ def single_env_run(env_run):
 
     current_results = np.zeros(8)
 
-    for i, _seed in enumerate(seeds):
-        for j, _scale in enumerate(sc_list):
-            cfg.seed = _seed
-            cfg.environment.scale_lengths = _scale
-            cfg.scale.scale_lengths = _scale
-            # print("-----------==========++++++++++==========-----------")
-            results = paper_phase_1_eval(cfg=cfg, best_model=True)
-            current_results[0] = _scale[0]
-            current_results[1] = _seed
-            current_results[2:] = results
+    # single_seed_run(seeds[0], num_sc_list, sc_list, cfg)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=20) as executor:
+        results = executor.map(
+            single_seed_run,
+            seeds,
+            repeat(num_sc_list),
+            repeat(sc_list),
+            repeat(cfg),
+        )
 
-            phase_1_results[i, j, :] = current_results
-            # print("-----------==========++++++++++==========-----------")
-
-            results = paper_RMA_DATT_eval(cfg=cfg, best_model=True)
-            current_results[0] = _scale[0]
-            current_results[1] = _seed
-            current_results[2:] = results
-
-            rma_datt_results[i, j, :] = current_results
+        for i, (seed, phase_1, rma_datt) in enumerate(results):
+            phase_1_results[i] = phase_1
+            rma_datt_results[i] = rma_datt
 
     run_folder = (
         "runs/"
         + cfg.experiment.wandb_project_name
+        + "/"
         + cfg.grp_name
         + "/"
         + cfg.run_name
@@ -121,6 +148,7 @@ def single_env_run(env_run):
 
     print("Saving results to:", results_folder)
     prefix = "wind_" if args.wind_bool else "nowind_"
+    print("Shapes:", phase_1_results.shape, rma_datt_results.shape)
     np.save(results_folder + prefix + "phase_1_scale.npy", phase_1_results)
     np.save(results_folder + prefix + "rma_datt_scale.npy", rma_datt_results)
 
@@ -129,3 +157,5 @@ for env_run in env_runs:
     # single_env_run(env_run)
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
         executor.map(single_env_run, env_runs)
+    # for env_run in env_runs:
+    #     single_env_run(env_run)
