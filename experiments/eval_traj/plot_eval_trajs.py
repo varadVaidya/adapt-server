@@ -79,5 +79,5 @@ if __name__ == "__main__":
         shrink=0.75,
         orientation="horizontal",
     )
-    # plt.savefig("experiments/eval_trajs_portrait.png")
+    # plt.savefig("experiments/eval_trajs/eval_trajs_portrait.png")
     plt.show()
