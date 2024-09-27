@@ -32,8 +32,8 @@ class Args:
 
 
 env_runs = [
-    ["traj_v3", "sweet-feather-28", False],
-    ["traj_v3", "sweet-feather-28", True],
+    ["traj_v3", "laced-fire-32", False],
+    ["traj_v3", "laced-fire-32", True],
     # ["traj_v3", "good-shadow-27", False],
     # ["traj_v3", "good-shadow-27", True],
 ]
@@ -101,7 +101,7 @@ def single_env_run(env_run):
 
     ### * EVAL CODE
 
-    sc = np.linspace(0.05, 0.16, 12)
+    sc = np.linspace(0.05, 0.20, 16)
     print("Scale lengths:", sc)
     sc_list = [[i, i] for i in sc]
     num_sc_list = len(sc_list)

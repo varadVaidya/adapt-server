@@ -32,7 +32,8 @@ class Args:
 
 
 env_runs = [
-    ["traj_v3", "sweet-feather-28", False],
+    ["traj_v3", "laced-fire-32", False],
+    ["traj_v3", "laced-fire-32", True],
 ]
 
 
@@ -144,7 +145,7 @@ for env_run in env_runs:
 
     ### * EVAL CODE
 
-    sc = np.linspace(0.05, 0.16, 12)
+    sc = np.linspace(0.05, 0.20, 16)
     print("Scale lengths:", sc)
     sc_list = [[i, i] for i in sc]
     num_sc_list = len(sc_list)
@@ -154,7 +155,7 @@ for env_run in env_runs:
     print("Number of eval trajs:", num_eval_trajs)
 
     # create a list of seeds by incrementing cfg.seed by 1
-    num_seeds = 16
+    num_seeds = 30
     seeds = [cfg.seed + i for i in range(num_seeds)]
     print("Seeds:", seeds)
 
@@ -196,5 +197,12 @@ for env_run in env_runs:
 
     print("Saving results to:", results_folder)
     prefix = "wind_" if args.wind_bool else "no_wind_"
+    # check if all values are filled
+    print(
+        "Nan present in phase_1_results:",
+        np.isnan(all_phase_1_results).any(),
+        "Nan present in rma_datt_results:",
+        np.isnan(all_rma_datt_results).any(),
+    )
     np.save(results_folder + prefix + "phase_1_traj.npy", all_phase_1_results)
     np.save(results_folder + prefix + "rma_datt_traj.npy", all_rma_datt_results)
