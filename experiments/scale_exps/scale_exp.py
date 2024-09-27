@@ -117,6 +117,9 @@ def single_env_run(env_run):
     phase_1_results = np.zeros((num_seeds, num_sc_list, 8))
     rma_datt_results = np.zeros((num_seeds, num_sc_list, 8))
 
+    phase_1_results[:] = np.nan
+    rma_datt_results[:] = np.nan
+
     current_results = np.zeros(8)
 
     # single_seed_run(seeds[0], num_sc_list, sc_list, cfg)
@@ -149,6 +152,12 @@ def single_env_run(env_run):
     print("Saving results to:", results_folder)
     prefix = "wind_" if args.wind_bool else "nowind_"
     print("Shapes:", phase_1_results.shape, rma_datt_results.shape)
+    print(
+        "Nan present in phase_1_results:",
+        np.isnan(phase_1_results).any(),
+        "Nan present in rma_datt_results:",
+        np.isnan(rma_datt_results).any(),
+    )
     np.save(results_folder + prefix + "phase_1_scale.npy", phase_1_results)
     np.save(results_folder + prefix + "rma_datt_scale.npy", rma_datt_results)
 
