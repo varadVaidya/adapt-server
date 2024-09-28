@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import concurrent.futures
 from itertools import repeat
 import time
+from tqdm import tqdm
 
 os.environ["MUJOCO_GL"] = "egl"
 
@@ -33,78 +34,83 @@ class Args:
 
 env_runs = [
     ["traj_v3", "laced-fire-32", False],
-    ["traj_v3", "laced-fire-32", True],
+    # ["traj_v3", "laced-fire-32", True],
 ]
+
+
+def evaluate_per_seed_per_scale(seed, scale, cfg, idx):
+    phase_1_scale_results = np.zeros(9)
+    rma_datt_scale_results = np.zeros(9)
+    cfg.seed = seed
+    cfg.environment.scale_lengths = scale
+    cfg.scale.scale_lengths = scale
+
+    results = paper_phase_1_eval(
+        cfg=cfg, best_model=True, idx=idx, return_traj_len=True
+    )
+    phase_1_scale_results[0] = scale[0]
+    phase_1_scale_results[1] = seed
+    phase_1_scale_results[2:] = results
+
+    results = paper_RMA_DATT_eval(
+        cfg=cfg, best_model=True, idx=idx, return_traj_len=True
+    )
+    rma_datt_scale_results[0] = scale[0]
+    rma_datt_scale_results[1] = seed
+    rma_datt_scale_results[2:] = results
+
+    return scale, phase_1_scale_results, rma_datt_scale_results
 
 
 def evaluate_per_seed(seed, num_sc_list, sc_list, cfg, idx):
     # print("Evaluating idx:", idx, "seed:", seed, "at time:", time.asctime())
     phase_1_seed_results = np.zeros((num_sc_list, 9))
     rma_datt_seed_results = np.zeros((num_sc_list, 9))
-    for i, _scale in enumerate(sc_list):
-        print(
-            "Evaluating idx:",
-            idx,
-            "seed:",
-            seed,
-            "scale:",
-            _scale,
-            "at time:",
-            time.asctime(),
-        )
-        phase_1_current_results = np.zeros(9)
-        rma_datt_current_results = np.zeros(9)
-        cfg.seed = seed
-        cfg.environment.scale_lengths = _scale
-        cfg.scale.scale_lengths = _scale
-        # print("-----------==========++++++++++==========-----------")
-        results = paper_phase_1_eval(
-            cfg=cfg, best_model=True, idx=idx, return_traj_len=True
-        )
-        phase_1_current_results[0] = _scale[0]
-        phase_1_current_results[1] = seed
-        phase_1_current_results[2:] = results
+    # print(
+    #     "Evaluating idx:",
+    #     idx,
+    #     "seed:",
+    #     seed,
+    #     "at time:",
+    #     time.asctime(),
+    # )
 
-        phase_1_seed_results[i, :] = phase_1_current_results
-
-        # print("-----------==========++++++++++==========-----------")
-
-        results = paper_RMA_DATT_eval(
-            cfg=cfg, best_model=True, idx=idx, return_traj_len=True
+    with concurrent.futures.ProcessPoolExecutor(max_workers=7) as executor:
+        results = executor.map(
+            evaluate_per_seed_per_scale,
+            repeat(seed),
+            sc_list,
+            repeat(cfg),
+            repeat(idx),
         )
-        rma_datt_current_results[0] = _scale[0]
-        rma_datt_current_results[1] = seed
-        rma_datt_current_results[2:] = results
 
-        rma_datt_seed_results[i, :] = rma_datt_current_results
-        print(
-            "Done evaluating idx:",
-            idx,
-            "seed:",
-            seed,
-            "scale:",
-            _scale,
-            "at time:",
-            time.asctime(),
-        )
+        for i, (scale, phase_1, rma_datt) in enumerate(results):
+            phase_1_seed_results[i] = phase_1
+            rma_datt_seed_results[i] = rma_datt
 
     return seed, phase_1_seed_results, rma_datt_seed_results
 
 
 def trajectory_eval_idx(idx, num_seeds, seeds, num_sc_list, sc_list, cfg):
-    print("Evalating trajectory idx:", idx)
+    # print("Evalating trajectory idx:", idx)
     # 8 : scale, seed, mean_e, rms_e,  mass, ixx, iyy, izz
     phase_1_results = np.zeros((num_seeds, num_sc_list, 9))
     rma_datt_results = np.zeros((num_seeds, num_sc_list, 9))
 
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        results = executor.map(
-            evaluate_per_seed,
-            seeds,
-            repeat(num_sc_list),
-            repeat(sc_list),
-            repeat(cfg),
-            repeat(idx),
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+        results = list(
+            tqdm(
+                executor.map(
+                    evaluate_per_seed,
+                    seeds,
+                    repeat(num_sc_list),
+                    repeat(sc_list),
+                    repeat(cfg),
+                    repeat(idx),
+                ),
+                total=len(seeds),
+                desc=f"Trajectory {idx}",
+            )
         )
 
         for i, (seed, phase_1, rma_datt) in enumerate(results):
@@ -148,14 +154,16 @@ for env_run in env_runs:
     sc = np.linspace(0.05, 0.20, 16)
     print("Scale lengths:", sc)
     sc_list = [[i, i] for i in sc]
+    sc_list = sc_list[:2]
+    print("Scale lengths:", sc_list)
     num_sc_list = len(sc_list)
     print("Scale lengths:", num_sc_list)
 
-    num_eval_trajs = 13  # 13 eval trajs #& HARDCODED for now
+    num_eval_trajs = 1  # 13 eval trajs #& HARDCODED for now
     print("Number of eval trajs:", num_eval_trajs)
 
     # create a list of seeds by incrementing cfg.seed by 1
-    num_seeds = 16
+    num_seeds = 3
     seeds = [cfg.seed + i for i in range(num_seeds)]
     print("Seeds:", seeds)
 
@@ -178,7 +186,6 @@ for env_run in env_runs:
         )
 
         for idx, phase_1_results, rma_datt_results in results:
-            print("idx:", idx)
             all_phase_1_results[idx] = phase_1_results
             all_rma_datt_results[idx] = rma_datt_results
 
