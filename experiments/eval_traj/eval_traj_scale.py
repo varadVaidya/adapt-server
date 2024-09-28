@@ -34,7 +34,7 @@ class Args:
 
 env_runs = [
     ["traj_v3", "laced-fire-32", False],
-    # ["traj_v3", "laced-fire-32", True],
+    ["traj_v3", "laced-fire-32", True],
 ]
 
 
