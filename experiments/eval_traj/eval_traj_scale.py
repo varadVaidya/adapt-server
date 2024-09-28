@@ -63,6 +63,7 @@ def evaluate_per_seed_per_scale(seed, scale, cfg, idx):
 
 
 def evaluate_per_seed(seed, num_sc_list, sc_list, cfg, idx):
+    # print("idx")
     # print("Evaluating idx:", idx, "seed:", seed, "at time:", time.asctime())
     phase_1_seed_results = np.zeros((num_sc_list, 9))
     rma_datt_seed_results = np.zeros((num_sc_list, 9))
@@ -75,7 +76,7 @@ def evaluate_per_seed(seed, num_sc_list, sc_list, cfg, idx):
     #     time.asctime(),
     # )
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=7) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
         results = executor.map(
             evaluate_per_seed_per_scale,
             repeat(seed),
@@ -97,7 +98,7 @@ def trajectory_eval_idx(idx, num_seeds, seeds, num_sc_list, sc_list, cfg):
     phase_1_results = np.zeros((num_seeds, num_sc_list, 9))
     rma_datt_results = np.zeros((num_seeds, num_sc_list, 9))
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
         results = list(
             tqdm(
                 executor.map(
@@ -110,6 +111,7 @@ def trajectory_eval_idx(idx, num_seeds, seeds, num_sc_list, sc_list, cfg):
                 ),
                 total=len(seeds),
                 desc=f"Trajectory {idx}",
+                position=idx,
             )
         )
 
