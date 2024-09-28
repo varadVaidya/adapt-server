@@ -76,7 +76,7 @@ def evaluate_per_seed(seed, num_sc_list, sc_list, cfg, idx):
     #     time.asctime(),
     # )
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
         results = executor.map(
             evaluate_per_seed_per_scale,
             repeat(seed),
@@ -98,7 +98,7 @@ def trajectory_eval_idx(idx, num_seeds, seeds, num_sc_list, sc_list, cfg):
     phase_1_results = np.zeros((num_seeds, num_sc_list, 9))
     rma_datt_results = np.zeros((num_seeds, num_sc_list, 9))
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
         results = list(
             tqdm(
                 executor.map(
@@ -175,7 +175,7 @@ for env_run in env_runs:
     all_phase_1_results[:] = np.nan
     all_rma_datt_results[:] = np.nan
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=13) as executor:
         results = executor.map(
             trajectory_eval_idx,
             range(num_eval_trajs),
