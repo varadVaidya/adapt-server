@@ -154,16 +154,15 @@ for env_run in env_runs:
     sc = np.linspace(0.05, 0.20, 16)
     print("Scale lengths:", sc)
     sc_list = [[i, i] for i in sc]
-    sc_list = sc_list[:2]
     print("Scale lengths:", sc_list)
     num_sc_list = len(sc_list)
     print("Scale lengths:", num_sc_list)
 
-    num_eval_trajs = 1  # 13 eval trajs #& HARDCODED for now
+    num_eval_trajs = 13  # 13 eval trajs #& HARDCODED for now
     print("Number of eval trajs:", num_eval_trajs)
 
     # create a list of seeds by incrementing cfg.seed by 1
-    num_seeds = 3
+    num_seeds = 16
     seeds = [cfg.seed + i for i in range(num_seeds)]
     print("Seeds:", seeds)
 
