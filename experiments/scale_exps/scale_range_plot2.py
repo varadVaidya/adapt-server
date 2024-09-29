@@ -62,23 +62,34 @@ km_kf_range = np.array([km_kf - km_kf_std, km_kf + km_kf_std])
 km_kf_range[km_kf_range < 0] = 0
 
 
-fig = plt.figure(figsize=(10, 8))
-gs = fig.add_gridspec(2, 6)
-# gs = gridspec.GridSpec(2, 6)
-gs.update(hspace=0.1875, wspace=1, left=0.1, right=0.9, top=0.9, bottom=0.1)
+fig, axs = plt.subplots(
+    5,
+    1,
+    figsize=(3, 6),
+    sharex=True,
+    height_ratios=[2, 2, 2, 2, 2],
+    layout="compressed",
+)
+ax1, ax2, ax3, ax4, ax5 = axs
 
-ax1 = plt.subplot(gs[0, :2])
-ax2 = plt.subplot(gs[0, 2:4])
-ax3 = plt.subplot(gs[0, 4:6])
-ax4 = plt.subplot(gs[1, 1:3])
-ax5 = plt.subplot(gs[1, 3:5])
-ax6 = plt.subplot(gs[1, -1])
-# ax1 = fig.add_subplot(gs[:2, 0])
-# ax2 = fig.add_subplot(gs[2:4, 0])
-# ax3 = fig.add_subplot(gs[3:4, 0:1])
-# ax4 = fig.add_subplot(gs[:2, 1])
-# ax5 = fig.add_subplot(gs[2:4, 1])
-# ax6 = fig.add_subplot(gs[5, 1])
+
+# fig = plt.figure(figsize=(10, 8))
+# gs = fig.add_gridspec(2, 6)
+# # gs = gridspec.GridSpec(2, 6)
+# gs.update(hspace=0.1875, wspace=1, left=0.1, right=0.9, top=0.9, bottom=0.1)
+
+# ax1 = plt.subplot(gs[0, :2])
+# ax2 = plt.subplot(gs[0, 2:4])
+# ax3 = plt.subplot(gs[0, 4:6])
+# ax4 = plt.subplot(gs[1, 1:3])
+# ax5 = plt.subplot(gs[1, 3:5])
+# ax6 = plt.subplot(gs[1, -1])
+# # ax1 = fig.add_subplot(gs[:2, 0])
+# # ax2 = fig.add_subplot(gs[2:4, 0])
+# # ax3 = fig.add_subplot(gs[3:4, 0:1])
+# # ax4 = fig.add_subplot(gs[:2, 1])
+# # ax5 = fig.add_subplot(gs[2:4, 1])
+# # ax6 = fig.add_subplot(gs[5, 1])
 
 train_fill_plot_list = [
     (mass, mass_range, ax1, "Mass", "Mass", "$(kg)$", (0, 0)),
@@ -120,12 +131,12 @@ for i, (data, data_range, ax, title, label, unit, scilimit) in enumerate(
     ax.grid()
     # ax.set_title(title)
     ax.set_aspect("auto")
-    ax.set_xlabel("Arm Length (m)")
-    ax.set_ylabel(f"{label} {unit}")
+    # ax.set_xlabel("Arm Length (m)")
+    ax.set_ylabel(f"{label} {unit}", fontsize=10)
     ax.ticklabel_format(axis="y", style="sci", scilimits=scilimit)
-    ax.tick_params(axis="x", labelsize=8)
+    # ax.tick_params(axis="x", labelsize=8)
     ax.tick_params(axis="y", labelsize=8)
-    ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+    ax.xaxis.set_major_locator(plt.MaxNLocator(6))
     ax.yaxis.set_major_locator(plt.MaxNLocator(4))
 
 ## --------------- EVAL RANGE PLOT ----------------- ##
@@ -175,20 +186,36 @@ for i, (data, data_range, ax, title, label, unit) in enumerate(eval_fill_plot_li
         data_range[1],
         alpha=0.5,
         color="steelblue",
-        hatch="\\",
+        hatch="X",
     )
     ax.plot(arm_lengths, data, color="royalblue")
+    # ax.tick_params(axis="x", labelsize=8)
 
-ax6.axis("off")
+# ax5.tick_params(axis="x", labelsize=8)
+# ax5.set_xlabel("Arm Length (m)")
+# ax6.axis("off")
 legend = ax5.get_legend_handles_labels()
-ax6.legend(
+# ax6.legend(
+#     legend[0],
+#     legend[1],
+#     loc="center",
+#     fontsize=9,
+#     bbox_to_anchor=(0.5, 0.5),
+#     fancybox=True,
+#     shadow=True,
+#     ncols=2,
+# )
+
+plt.legend(
     legend[0],
     legend[1],
-    loc="center",
+    loc="upper center",
     fontsize=9,
-    bbox_to_anchor=(0.5, 0.5),
     fancybox=True,
     shadow=True,
+    # orientation="horizontal",
+    bbox_to_anchor=(0.5, -0.3),
+    ncols=2,
 )
 
 # plt.tight_layout()
