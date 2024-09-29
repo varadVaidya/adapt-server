@@ -12,10 +12,11 @@ from adapt_drones.cfgs.config import *
 @dataclass
 class Args:
     env_id: str = "traj_v3"
-    run_name: str = "sweet-feather-28"
+    run_name: str = "laced-fire-32"
     seed: int = 20240915
     agent: str = "RMA_DATT"
     scale: bool = True
+    wind_bool: bool = False
 
 
 args = tyro.cli(Args)
@@ -27,6 +28,7 @@ cfg = Config(
     run_name=args.run_name,
     agent=args.agent,
     scale=args.scale,
+    wind_bool=args.wind_bool,
 )
 run_folder = (
     "runs/"
@@ -38,9 +40,9 @@ run_folder = (
     + "/"
 )
 results_folder = run_folder + "results-icra/"
-prefix = "wind_"
+prefix = "wind_" if args.wind_bool else "nowind_"
 
-phase_1_results = np.load(results_folder + "wind_phase_1_traj.npy")
+phase_1_results = np.load(results_folder + "no_wind_phase_1_traj.npy")
 
 
 idx_sort_phase = np.argsort(np.mean(phase_1_results[:, :, :, 2], axis=2))
@@ -48,7 +50,7 @@ sorted_phase_1 = phase_1_results[:, idx_sort_phase[0], :, :]
 
 phase_1 = sorted_phase_1[:, 3:-3, :, :]  # remove the top 3 and bottom 3 seeds
 
-RMA_DATT_results = np.load(results_folder + "wind_rma_datt_traj.npy")
+RMA_DATT_results = np.load(results_folder + "no_wind_rma_datt_traj.npy")
 idx_sort_rma = np.argsort(np.mean(RMA_DATT_results[:, :, :, 2], axis=2))
 sorted_rma = RMA_DATT_results[:, idx_sort_rma[0], :, :]
 
