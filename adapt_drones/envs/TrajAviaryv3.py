@@ -5,12 +5,14 @@ import mujoco
 import gymnasium as gym
 from gymnasium import spaces
 from collections import OrderedDict
+from typing import Union
 
 from adapt_drones.envs.BaseAviary import BaseAviary
 from adapt_drones.cfgs.config import Config
 import adapt_drones.utils.rotation as rotation
 import adapt_drones.utils.rewards as rewards
 import adapt_drones.utils.visuals as visuals
+from adapt_drones.utils.dynamics import CustomDynamics
 
 
 class TrajAviaryv3(BaseAviary):
@@ -116,7 +118,7 @@ class TrajAviaryv3(BaseAviary):
         # kinematics reset
         self._kinematics_reset()
         # dynamics reset
-        self._dynamics_reset()
+        self._dynamics_reset(options=options)
 
         self.housekeeping()
         self.set_max_force_torque_limits()
@@ -335,78 +337,107 @@ class TrajAviaryv3(BaseAviary):
             ]
         )
 
-    def _dynamics_reset(self):
+    def _dynamics_reset(self, options: [Union[None, dict]] = None):
         """
         Resets the dynamics properties of the drone. Uses the scaling laws to
         reset the properties.
         """
 
-        # arm length
-        _arm_length = self.cfg.scale.scale_lengths
-        self.arm_length = self.np_random.uniform(_arm_length[0], _arm_length[1])
-        L = self.arm_length
+        if options is None:
+            # arm length
+            _arm_length = self.cfg.scale.scale_lengths
+            self.arm_length = self.np_random.uniform(_arm_length[0], _arm_length[1])
+            L = self.arm_length
 
-        # mass
-        _mass_avg = np.polyval(self.cfg.scale.avg_mass_fit, L)
-        _mass_std = np.polyval(self.cfg.scale.std_mass_fit, L)
-        _mass_std = 0.0 if _mass_std < 0.0 else _mass_std
+            # mass
+            _mass_avg = np.polyval(self.cfg.scale.avg_mass_fit, L)
+            _mass_std = np.polyval(self.cfg.scale.std_mass_fit, L)
+            _mass_std = 0.0 if _mass_std < 0.0 else _mass_std
 
-        _mass = self.np_random.uniform(_mass_avg - _mass_std, _mass_avg + _mass_std)
-        self.model.body_mass[self.drone_id] = _mass
+            _mass = self.np_random.uniform(_mass_avg - _mass_std, _mass_avg + _mass_std)
+            self.model.body_mass[self.drone_id] = _mass
 
-        self.HOVER_THRUST = _mass * -1 * self.model.opt.gravity[2]
+            self.HOVER_THRUST = _mass * -1 * self.model.opt.gravity[2]
 
-        # ixx
-        _ixx_avg = np.polyval(self.cfg.scale.avg_ixx_fit, L)
-        _ixx_std = np.polyval(self.cfg.scale.std_ixx_fit, L)
-        _ixx_std = 0.0 if _ixx_std < 0.0 else _ixx_std
+            # ixx
+            _ixx_avg = np.polyval(self.cfg.scale.avg_ixx_fit, L)
+            _ixx_std = np.polyval(self.cfg.scale.std_ixx_fit, L)
+            _ixx_std = 0.0 if _ixx_std < 0.0 else _ixx_std
 
-        _ixx = self.np_random.uniform(_ixx_avg - _ixx_std, _ixx_avg + _ixx_std)
+            _ixx = self.np_random.uniform(_ixx_avg - _ixx_std, _ixx_avg + _ixx_std)
 
-        # iyy
-        _iyy_avg = np.polyval(self.cfg.scale.avg_iyy_fit, L)
-        _iyy_std = np.polyval(self.cfg.scale.std_iyy_fit, L)
-        _iyy_std = 0.0 if _iyy_std < 0.0 else _iyy_std
+            # iyy
+            _iyy_avg = np.polyval(self.cfg.scale.avg_iyy_fit, L)
+            _iyy_std = np.polyval(self.cfg.scale.std_iyy_fit, L)
+            _iyy_std = 0.0 if _iyy_std < 0.0 else _iyy_std
 
-        _iyy = self.np_random.uniform(_iyy_avg - _iyy_std, _iyy_avg + _iyy_std)
+            _iyy = self.np_random.uniform(_iyy_avg - _iyy_std, _iyy_avg + _iyy_std)
 
-        # izz
-        _izz_avg = np.polyval(self.cfg.scale.avg_izz_fit, L)
-        _izz_std = np.polyval(self.cfg.scale.std_izz_fit, L)
-        _izz_std = 0.0 if _izz_std < 0.0 else _izz_std
+            # izz
+            _izz_avg = np.polyval(self.cfg.scale.avg_izz_fit, L)
+            _izz_std = np.polyval(self.cfg.scale.std_izz_fit, L)
+            _izz_std = 0.0 if _izz_std < 0.0 else _izz_std
 
-        _izz = self.np_random.uniform(_izz_avg - _izz_std, _izz_avg + _izz_std)
+            _izz = self.np_random.uniform(_izz_avg - _izz_std, _izz_avg + _izz_std)
 
-        inertia = np.array([_ixx, _iyy, _izz]).reshape(3)
-        self.model.body_inertia[self.drone_id] = inertia
+            inertia = np.array([_ixx, _iyy, _izz]).reshape(3)
+            self.model.body_inertia[self.drone_id] = inertia
 
-        # com offset 5% of the arm length in xy and 2.5% in z
-        com_offset = 0.05 * L
-        com_xy = self.np_random.uniform(-com_offset, com_offset, 2)
-        com_offset = 0.025 * L
-        com_z = self.np_random.uniform(-com_offset, com_offset, 1)
+            # com offset 5% of the arm length in xy and 2.5% in z
+            com_offset = 0.05 * L
+            com_xy = self.np_random.uniform(-com_offset, com_offset, 2)
+            com_offset = 0.025 * L
+            com_z = self.np_random.uniform(-com_offset, com_offset, 1)
 
-        com = np.hstack((com_xy, com_z))
-        self.model.body_ipos = com  # drone com
+            com = np.hstack((com_xy, com_z))
+            self.model.body_ipos = com  # drone com
 
-        # thrust offset 5% of the arm length in xy and 2.5% in z
-        thrust_offset = 0.05 * L
-        thrust_xy = self.np_random.uniform(-thrust_offset, thrust_offset, 2)
-        thrust_offset = 0.025 * L
-        thrust_z = self.np_random.uniform(-thrust_offset, thrust_offset, 1)
+            # thrust offset 5% of the arm length in xy and 2.5% in z
+            thrust_offset = 0.05 * L
+            thrust_xy = self.np_random.uniform(-thrust_offset, thrust_offset, 2)
+            thrust_offset = 0.025 * L
+            thrust_z = self.np_random.uniform(-thrust_offset, thrust_offset, 1)
 
-        thrust = np.hstack((thrust_xy, thrust_z))
-        self.model.site_pos[self.com_site_id] = thrust  # thrust site
+            thrust = np.hstack((thrust_xy, thrust_z))
+            self.model.site_pos[self.com_site_id] = thrust  # thrust site
 
-        # km_kf
-        _km_kf_avg = np.polyval(self.cfg.scale.avg_km_kf_fit, L)
-        _km_kf_std = np.polyval(self.cfg.scale.std_km_kf_fit, L)
-        _km_kf_std = 0.0 if _km_kf_std < 0.0 else _km_kf_std
+            # km_kf
+            _km_kf_avg = np.polyval(self.cfg.scale.avg_km_kf_fit, L)
+            _km_kf_std = np.polyval(self.cfg.scale.std_km_kf_fit, L)
+            _km_kf_std = 0.0 if _km_kf_std < 0.0 else _km_kf_std
 
-        _km_kf = self.np_random.uniform(
-            _km_kf_avg - _km_kf_std, _km_kf_avg + _km_kf_std
-        )
-        self.prop_const = _km_kf
+            _km_kf = self.np_random.uniform(
+                _km_kf_avg - _km_kf_std, _km_kf_avg + _km_kf_std
+            )
+            self.prop_const = _km_kf
+
+        else:
+            dynamics = CustomDynamics(**options)
+            L = dynamics.arm_length
+
+            self.model.body_mass[self.drone_id] = dynamics.mass
+            self.HOVER_THRUST = dynamics.mass * -1 * self.model.opt.gravity[2]
+
+            inertia = np.array([dynamics.ixx, dynamics.iyy, dynamics.izz]).reshape(3)
+            self.model.body_inertia[self.drone_id] = inertia
+
+            com_offset = 0.05 * L
+            com_xy = self.np_random.uniform(-com_offset, com_offset, 2)
+            com_offset = 0.025 * L
+            com_z = self.np_random.uniform(-com_offset, com_offset, 1)
+
+            com = np.hstack((com_xy, com_z))
+            self.model.body_ipos = com  # drone com
+
+            thrust_offset = 0.05 * L
+            thrust_xy = self.np_random.uniform(-thrust_offset, thrust_offset, 2)
+            thrust_offset = 0.025 * L
+            thrust_z = self.np_random.uniform(-thrust_offset, thrust_offset, 1)
+
+            thrust = np.hstack((thrust_xy, thrust_z))
+            self.model.site_pos[self.com_site_id] = thrust
+
+            self.prop_const = dynamics.km_kf
 
         self.thrust2weight = 2.75
 
