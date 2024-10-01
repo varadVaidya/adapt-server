@@ -1,6 +1,7 @@
 import os
 import random
 from dataclasses import asdict
+from typing import Union
 
 os.environ["MUJOCO_GL"] = "egl"
 
@@ -16,7 +17,12 @@ from adapt_drones.utils.ploting import data_plot, TextonPlot
 from adapt_drones.networks.adapt_net import AdaptationNetwork
 
 
-def phase1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
+def phase1_eval(
+    cfg: Config,
+    idx: [int, None] = None,
+    best_model: bool = True,
+    options: Union[None, dict] = None,
+):
     """Phase 1 evaluation script
 
     Args:
@@ -87,7 +93,7 @@ def phase1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
         raise ValueError("Invalid agent type")
 
     agent.eval()
-    obs, _ = env.reset(seed=cfg.seed)
+    obs, _ = env.reset(seed=cfg.seed, options=options)
 
     mass = env.unwrapped.model.body_mass[env.unwrapped.drone_id]
     inertia = env.unwrapped.model.body_inertia[env.unwrapped.drone_id]
@@ -160,7 +166,12 @@ def phase1_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
     env.unwrapped.renderer.close()
 
 
-def RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True):
+def RMA_DATT_eval(
+    cfg: Config,
+    idx: [int, None] = None,
+    best_model: bool = True,
+    options: Union[None, dict] = None,
+):
     print("=================================")
     print("Adaptation Evaluation")
 
@@ -231,7 +242,7 @@ def RMA_DATT_eval(cfg: Config, idx: [int, None] = None, best_model: bool = True)
 
     state_action_buffer = torch.zeros(state_action_shape, time_horizon).to(device)
 
-    obs, _ = env.reset(seed=cfg.seed)
+    obs, _ = env.reset(seed=cfg.seed, options=options)
 
     mass = env.unwrapped.model.body_mass[env.unwrapped.drone_id]
     inertia = env.unwrapped.model.body_inertia[env.unwrapped.drone_id]
@@ -325,6 +336,7 @@ def paper_phase_1_eval(
     cfg: Config,
     idx: [int, None] = None,
     best_model: bool = True,
+    options: Union[None, dict] = None,
     return_traj_len: bool = False,
 ):
     # print("=================================")
@@ -392,7 +404,7 @@ def paper_phase_1_eval(
     )
 
     agent.eval()
-    obs, _ = env.reset(seed=cfg.seed)
+    obs, _ = env.reset(seed=cfg.seed, options=options)
 
     mass = env.unwrapped.model.body_mass[env.unwrapped.drone_id]
     inertia = env.unwrapped.model.body_inertia[env.unwrapped.drone_id]
@@ -450,6 +462,7 @@ def paper_RMA_DATT_eval(
     cfg: Config,
     idx: [int, None] = None,
     best_model: bool = True,
+    options: Union[None, dict] = None,
     return_traj_len: bool = False,
 ):
     # print("=================================")
@@ -518,7 +531,7 @@ def paper_RMA_DATT_eval(
 
     state_action_buffer = torch.zeros(state_action_shape, time_horizon).to(device)
 
-    obs, _ = env.reset(seed=cfg.seed)
+    obs, _ = env.reset(seed=cfg.seed, options=options)
 
     mass = env.unwrapped.model.body_mass[env.unwrapped.drone_id]
     inertia = env.unwrapped.model.body_inertia[env.unwrapped.drone_id]
