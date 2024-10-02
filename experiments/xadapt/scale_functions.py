@@ -1,11 +1,11 @@
 import numpy as np
 
 L_MIN, L_MAX = [0.046, 0.220]
-M_MIN, M_MAX = [0.226, 1.70]
-I_XX_MIN, I_XX_MAX = [1.93e-4, 9.40e-3]
-I_YY_MIN, I_YY_MAX = [1.93e-4, 9.40e-3]
-I_ZZ_MIN, I_ZZ_MAX = [2.42e-4, 12.51e-3]
-tau_to_F_MIN, tau_to_F_MAX = [0.0069, 0.0161]
+M_MIN, M_MAX = [0.205, 1.841]
+I_XX_MIN, I_XX_MAX = [1.23e-4, 1.75e-2]
+I_YY_MIN, I_YY_MAX = [1.23e-4, 1.75e-2]
+I_ZZ_MIN, I_ZZ_MAX = [2.10e-4, 3.40e-2]
+tau_to_F_MIN, tau_to_F_MAX = [0.0051, 0.0170]
 T_to_rpm2_MIN, T_to_rpm2_MAX = [3.88e-8, 8.40e-6]
 BODY_DRAG_MIN, BODY_DRAG_MAX = [0, 0.74]
 MOTOR_SPEED_MIN, MOTOR_SPEED_MAX = [800, 8044]
@@ -13,13 +13,18 @@ MOTOR_SPEED_MIN, MOTOR_SPEED_MAX = [800, 8044]
 
 class Dynamics:
 
-    def __init__(self, seed, c):
+    def __init__(self, seed, c, do_random=True):
         self.c = c
         self.rng = seed
+        self.do_random = do_random
         pass
 
     def random_output_dynamics(self, dynamics):
-        return self.rng.uniform(0.8 * dynamics, 1.2 * dynamics)
+        return (
+            self.rng.uniform(dynamics * 0.8, dynamics * 1.2)
+            if self.do_random
+            else dynamics
+        )
 
     def length_scale(self):
         self.l = self.random_output_dynamics(L_MIN + self.c * (L_MAX - L_MIN))
