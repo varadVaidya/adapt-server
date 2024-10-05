@@ -65,21 +65,11 @@ class Quadrotor3D:
         """
         if len(args) != 0:
             assert len(args) == 1 and len(args[0]) == 13
-            (
-                self.pos[0],
-                self.pos[1],
-                self.pos[2],
-                self.angle[0],
-                self.angle[1],
-                self.angle[2],
-                self.angle[3],
-                self.vel[0],
-                self.vel[1],
-                self.vel[2],
-                self.a_rate[0],
-                self.a_rate[1],
-                self.a_rate[2],
-            ) = args[0]
+
+            self.pos = np.array(args[0][:3])
+            self.angle = np.array(args[0][3:7])
+            self.vel = np.array(args[0][7:10])
+            self.a_rate = np.array(args[0][10:])
 
         else:
             self.pos = kwargs["pos"]

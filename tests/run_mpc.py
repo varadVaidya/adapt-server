@@ -59,6 +59,7 @@ def prepare_quadrotor_mpc(
 def main(noisy=False):
     quad_mpc = prepare_quadrotor_mpc(noisy=noisy)
 
+    rng = np.random.default_rng(seed=4723549)
     my_quad = quad_mpc.quad
     n_mpc_node = quad_mpc.n_nodes
     t_horizon = quad_mpc.t_horizon
@@ -77,7 +78,15 @@ def main(noisy=False):
         get_reference_trajectory(trajector_dataset, traj_idx, control_period)
     )
 
-    quad_current_state = reference_trajectory[0, :].tolist()
+    delta_pos = rng.uniform(-0.1, 0.1, 3)
+    delta_vel = rng.uniform(-0.1, 0.1, 3)
+    delta_ori = rng.uniform(-0.1, 0.1, 4)
+    delta_ori /= np.linalg.norm(delta_ori)
+    delta_rate = rng.uniform(-0.05, 0.05, 3)
+
+    delta_init_pos = np.concatenate([delta_pos, delta_ori, delta_vel, delta_rate])
+    quad_current_state = (reference_trajectory[0, :] + delta_init_pos).tolist()
+
     my_quad.set_state(quad_current_state)
 
     ref_u = np.zeros(4)
