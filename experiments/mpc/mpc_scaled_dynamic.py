@@ -7,6 +7,7 @@ import time
 import pkg_resources
 import tqdm
 import concurrent.futures
+from dataclasses import dataclass
 
 from adapt_drones.utils.mpc_utils import (
     separate_variables,
@@ -15,12 +16,22 @@ from adapt_drones.utils.mpc_utils import (
 )
 from adapt_drones.controller.mpc.quad_3d_mpc import Quad3DMPC
 from adapt_drones.controller.mpc.quad_3d import Quadrotor3D
-from adapt_drones.utils.dynamics import CustomDynamics
-from experiments.xadapt.scale_functions import *
+from adapt_drones.utils.dynamics import CustomDynamics, ScaledDynamics
+from adapt_drones.cfgs.config import *
 
 import mujoco
 from adapt_drones.utils.rotation import euler2mat
 import pandas as pd
+
+
+@dataclass
+class Args:
+    env_id: str
+    run_name: str
+    seed: int = 4551
+    agent: str = "RMA_DATT"
+    scale: bool = True
+    wind_bool: bool = True
 
 
 def prepare_quadrotor_mpc(
@@ -69,32 +80,32 @@ def prepare_quadrotor_mpc(
     return quad_mpc
 
 
-def mpc_traj_seed_scale(idx, seed, scale, give_MPC_truth=False):
+def mpc_traj_seed_scale(idx, seed, scale, cfg: Config, give_MPC_truth=False):
     """
     Runs and evaluates MPC for a given trajectory, seed and scale.
     Returns idx, seed, scale, mean error, rms error.
     """
     rng = np.random.default_rng(seed=seed)
 
-    xadapt_ground = Dynamics(seed=rng, c=scale, do_random=False)
-    xadapt_changed = Dynamics(seed=rng, c=scale, do_random=True)
+    scaled_ground = ScaledDynamics(seed=rng, arm_length=scale, cfg=cfg, do_random=False)
+    scaled_changed = ScaledDynamics(seed=rng, arm_length=scale, cfg=cfg, do_random=True)
 
     ground_dynamics = CustomDynamics(
-        arm_length=xadapt_ground.length_scale(),
-        mass=xadapt_ground.mass_scale(),
-        ixx=xadapt_ground.ixx_yy_scale(),
-        iyy=xadapt_ground.ixx_yy_scale(),
-        izz=xadapt_ground.izz_scale(),
-        km_kf=xadapt_ground.torque_to_thrust(),
+        arm_length=scaled_ground.length_scale(),
+        mass=scaled_ground.mass_scale(),
+        ixx=scaled_ground.ixx_yy_scale(),
+        iyy=scaled_ground.ixx_yy_scale(),
+        izz=scaled_ground.izz_scale(),
+        km_kf=scaled_ground.torque_to_thrust(),
     )
 
     changed_dynamics = CustomDynamics(
-        arm_length=xadapt_changed.length_scale(),
-        mass=xadapt_changed.mass_scale(),
-        ixx=xadapt_changed.ixx_yy_scale(),
-        iyy=xadapt_changed.ixx_yy_scale(),
-        izz=xadapt_changed.izz_scale(),
-        km_kf=xadapt_changed.torque_to_thrust(),
+        arm_length=scaled_changed.length_scale(),
+        mass=scaled_changed.mass_scale(),
+        ixx=scaled_changed.ixx_yy_scale(),
+        iyy=scaled_changed.ixx_yy_scale(),
+        izz=scaled_changed.izz_scale(),
+        km_kf=scaled_changed.torque_to_thrust(),
     )
 
     quad_mpc = prepare_quadrotor_mpc(
@@ -199,9 +210,23 @@ def mpc_traj_seed_scale(idx, seed, scale, give_MPC_truth=False):
 
 
 if __name__ == "__main__":
-    c = np.linspace(0, 1, 15)
-    seeds = np.arange(4551, 4551 + 16)
-    idx = np.arange(0, 13)
+    env_run = ["traj_v3", "true-durian-33", False]
+    args = Args(env_id=env_run[0], run_name=env_run[1], wind_bool=env_run[2])
+
+    cfg = Config(
+        env_id=args.env_id,
+        seed=args.seed,
+        eval=True,
+        run_name=args.run_name,
+        agent=args.agent,
+        scale=args.scale,
+        wind_bool=args.wind_bool,
+    )
+
+    c = np.linspace(0.055, 0.20, 3)
+    seeds = np.arange(4551, 4551 + 5)
+    idx = np.arange(0, 2)
+    sc_list = [[i, i] for i in c]
 
     print(c)
     print(seeds)
@@ -213,7 +238,7 @@ if __name__ == "__main__":
 
     give_MPC_truth = [False, True]
 
-    print(mpc_traj_seed_scale(0, 4551, 1, False))
+    print(mpc_traj_seed_scale(0, 4551, c[0], cfg, False))
 
     for i, MPC_truth in enumerate(give_MPC_truth):
 
@@ -248,7 +273,7 @@ if __name__ == "__main__":
         # do plain old fashioned for loop
         results = []
         for i, seed, _c, MPC_truth in tqdm.tqdm(map_iterable, desc="Running MPC"):
-            results.append(mpc_traj_seed_scale(i, seed, _c, MPC_truth))
+            results.append(mpc_traj_seed_scale(i, seed, _c, cfg, MPC_truth))
 
         for result in results:
             _idx, _seed, _c, _mean_error, _rms_error = result
@@ -269,7 +294,7 @@ if __name__ == "__main__":
         # check for nans
         print(np.argwhere(np.isnan(traj_mpc_eval)))
 
-        run_folder = "experiments/mpc/results-xadapt/"
+        run_folder = "experiments/mpc/results-scaled/"
 
         os.makedirs(run_folder, exist_ok=True)
 
@@ -362,7 +387,7 @@ if __name__ == "__main__":
         tex_table = pd.DataFrame(
             tex_table,
             columns=np.round(
-                Dynamics(seed=0, c=np.unique(df["c"]), do_random=False).length_scale(),
+                np.unique(df["c"]),
                 3,
             ),
             index=np.unique(df["idx"]),
