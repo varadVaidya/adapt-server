@@ -1,10 +1,12 @@
 """ Evaluated Trajectory Scale with perfect dynamics. This will serve as the ideal baseline for the MPC controller.
 The dynamics scale is set to the xadapt's scale. """
 
+import os
 import numpy as np
 import time
 import pkg_resources
 import tqdm
+import concurrent.futures
 
 from adapt_drones.utils.mpc_utils import (
     separate_variables,
@@ -18,6 +20,7 @@ from experiments.xadapt.scale_functions import *
 
 import mujoco
 from adapt_drones.utils.rotation import euler2mat
+import pandas as pd
 
 
 def prepare_quadrotor_mpc(
@@ -35,7 +38,7 @@ def prepare_quadrotor_mpc(
     # Default Q and R matrix for LQR cost
     if q_diagonal is None:
         q_diagonal = np.array(
-            [1, 1, 1, 0.1, 0.1, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+            [2.5, 2.5, 2.5, 0.1, 0.1, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
         )
     if r_diagonal is None:
         r_diagonal = np.array([0.1, 0.1, 0.1, 0.1])
@@ -66,11 +69,7 @@ def prepare_quadrotor_mpc(
     return quad_mpc
 
 
-def simulate_mpc_run():
-    pass
-
-
-def mpc_traj_seed_scale(idx, seed, scale):
+def mpc_traj_seed_scale(idx, seed, scale, give_MPC_truth=False):
     """
     Runs and evaluates MPC for a given trajectory, seed and scale.
     Returns idx, seed, scale, mean error, rms error.
@@ -100,7 +99,7 @@ def mpc_traj_seed_scale(idx, seed, scale):
 
     quad_mpc = prepare_quadrotor_mpc(
         ground_dynamics=ground_dynamics,
-        changed_dynamics=changed_dynamics,
+        changed_dynamics=changed_dynamics if not give_MPC_truth else ground_dynamics,
         noisy=True,
     )
 
@@ -200,8 +199,173 @@ def mpc_traj_seed_scale(idx, seed, scale):
 
 
 if __name__ == "__main__":
-    c = np.linspace(0, 1, 15)
-    seeds = np.arange(4551, 4551 + 16)
-    idx = np.arange(0, 13)
+    c = np.linspace(0, 1, 2)
+    seeds = np.arange(4551, 4551 + 3)
+    idx = np.arange(0, 2)
 
-    print(mpc_traj_seed_scale(3, 4551, 0.2))
+    print(c)
+    print(seeds)
+    print(idx)
+
+    num_lengths = len(c)
+    num_seeds = len(seeds)
+    num_idx = len(idx)
+
+    give_MPC_truth = [False, True]
+
+    print(mpc_traj_seed_scale(0, 4551, 1, False))
+
+    for i, MPC_truth in enumerate(give_MPC_truth):
+
+        traj_mpc_eval = np.zeros((num_idx, num_seeds, num_lengths, 5))
+        traj_mpc_eval[:, :, :, :] = np.nan
+
+        prefix = "ground_dynamics_" if MPC_truth else "changed_dynamics_"
+
+        map_iterable = [
+            (int(i), int(seed), float(_c), give_MPC_truth[0])
+            for i in idx
+            for seed in seeds
+            for _c in c
+        ]
+
+        print(len(map_iterable))
+        print("=====================================================================")
+        print(f"Running MPC with {'ground' if MPC_truth else 'changed'} dynamics")
+
+        # with concurrent.futures.ProcessPoolExecutor(max_workers=16) as executor:
+
+        #     results = list(
+        #         tqdm.tqdm(
+        #             executor.map(
+        #                 mpc_traj_seed_scale,
+        #                 *zip(*map_iterable),
+        #             ),
+        #             total=len(map_iterable),
+        #         )
+        #     )
+
+        # do plain old fashioned for loop
+        results = []
+        for i, seed, _c, MPC_truth in tqdm.tqdm(map_iterable, desc="Running MPC"):
+            results.append(mpc_traj_seed_scale(i, seed, _c, MPC_truth))
+
+        for result in results:
+            _idx, _seed, _c, _mean_error, _rms_error = result
+            idx_idx = np.where(idx == _idx)[0][0]
+            seed_idx = np.where(seeds == _seed)[0][0]
+            c_idx = np.where(c == _c)[0][0]
+
+            traj_mpc_eval[idx_idx, seed_idx, c_idx] = [
+                _idx,
+                _seed,
+                _c,
+                _mean_error,
+                _rms_error,
+            ]
+
+        print(traj_mpc_eval.shape)
+
+        # check for nans
+        print(np.argwhere(np.isnan(traj_mpc_eval)))
+
+        run_folder = "experiments/mpc/results/"
+
+        os.makedirs(run_folder, exist_ok=True)
+
+        np.save(run_folder + prefix + "traj_mpc_eval.npy", traj_mpc_eval)
+
+        # remove the seeds which performed worst across all scales, in
+        # sense of mean error
+
+        idx_sort_eval = np.argsort(traj_mpc_eval[:, :, :, 3], axis=2)
+        sorted_traj_eval = traj_mpc_eval[:, idx_sort_eval[0], :, :]
+
+        # remove top 3 and bottom 3 seeds
+        # traj_mpc_eval = sorted_traj_eval[:, 3:-3, :, :]
+
+        # compile the data into a csv file contain errors and std dev
+        data_compile = np.zeros((traj_mpc_eval.shape[0] * traj_mpc_eval.shape[1], 6))
+
+        # ^ 0: idx, 1: c,
+        # ^ 3:  avg mean error, 4: std dev mean error,
+        # ^ 4: avg rms error, 5: std dev rms error
+
+        data_compile[:, 0] = np.repeat(
+            np.arange(traj_mpc_eval.shape[0]), traj_mpc_eval.shape[2]
+        )  # tile idx
+
+        data_compile[:, 1] = np.tile(
+            traj_mpc_eval[0, 0, :, 2], traj_mpc_eval.shape[0]
+        )  # tile c
+
+        data_compile[:, 2] = np.mean(traj_mpc_eval[:, :, :, 3], axis=1).reshape(
+            traj_mpc_eval.shape[0] * traj_mpc_eval.shape[2]
+        )  # avg mean error
+
+        data_compile[:, 3] = np.std(traj_mpc_eval[:, :, :, 3], axis=1).reshape(
+            traj_mpc_eval.shape[0] * traj_mpc_eval.shape[2]
+        )  # std dev mean error
+
+        data_compile[:, 4] = np.mean(traj_mpc_eval[:, :, :, 4], axis=1).reshape(
+            traj_mpc_eval.shape[0] * traj_mpc_eval.shape[2]
+        )  # avg rms error
+
+        data_compile[:, 5] = np.std(traj_mpc_eval[:, :, :, 4], axis=1).reshape(
+            traj_mpc_eval.shape[0] * traj_mpc_eval.shape[2]
+        )  # std dev rms error
+
+        print(data_compile.shape)
+
+        print("Saving data_compile to: ", run_folder + prefix + "mpc_traj_excel.csv")
+
+        header = [
+            "idx",
+            "c",
+            "mean_error",
+            "std_dev_mean_error",
+            "rms_error",
+            "std_dev_rms_error",
+        ]
+
+        np.savetxt(
+            run_folder + prefix + "mpc_traj_excel.csv",
+            data_compile,
+            delimiter=",",
+            header=",".join(header),
+            comments="",
+        )
+
+        def get_error_info(df, idx_value, c_value):
+            # Filter the row based on idx and c values
+            row = df.loc[(df["idx"] == idx_value) & (df["c"] == c_value)]
+
+            # If the row exists, round and concatenate mean_error and std_dev_mean_error
+            if not row.empty:
+                mean_error = round(row["mean_error"].values[0], 3)
+                std_dev_mean_error = round(row["std_dev_mean_error"].values[0], 3)
+                return f"{mean_error} \pm {std_dev_mean_error}"
+            else:
+                return "No match found"
+
+        df = pd.read_csv(run_folder + prefix + "mpc_traj_excel.csv")
+
+        tex_table = []
+        for idx_value in np.unique(df["idx"]):
+            idx_row = []
+            for c_value in np.unique(df["c"]):
+                idx_row.append(get_error_info(df, idx_value, c_value))
+            tex_table.append(idx_row)
+
+        # convert tex_table to pandas dataframe
+        tex_table = np.array(tex_table)
+        tex_table = pd.DataFrame(
+            tex_table,
+            columns=np.round(
+                Dynamics(seed=0, c=np.unique(df["c"]), do_random=False).length_scale(),
+                3,
+            ),
+            index=np.unique(df["idx"]),
+        )
+        # save the table to a csv file
+        tex_table.to_csv(run_folder + prefix + "mpc_table.csv")
