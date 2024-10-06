@@ -198,7 +198,10 @@ class Quadrotor3D:
                 std = 0.02 * sqrt(u_i)
                 noise_u = np.random.normal(loc=0, scale=0.015)
                 u_i += noise_u
-                self.u[i] = max(min(u_i, self.max_input_value), self.min_input_value)
+                self.u[i] = (
+                    max(min(u_i, self.max_input_value), self.min_input_value)
+                    * self.max_thrust_actual
+                )
                 # self.u[i] = (
                 #     max(min(u_i - noise_u, self.max_input_value), self.min_input_value)
                 #     * self.max_thrust

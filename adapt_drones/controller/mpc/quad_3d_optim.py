@@ -120,7 +120,8 @@ class Quad3DOptimizer:
                 self.acados_models_dir + "/" + "c_generated_code"
             )
             ocp.model = key_model
-            ocp.dims.N = self.N
+            ocp.solver_options.N_horizon = self.N
+
             ocp.solver_options.tf = t_horizon
 
             # Initialaise partamteres
