@@ -223,9 +223,9 @@ if __name__ == "__main__":
         wind_bool=args.wind_bool,
     )
 
-    c = np.linspace(0.055, 0.20, 3)
-    seeds = np.arange(4551, 4551 + 5)
-    idx = np.arange(0, 2)
+    c = np.linspace(0.05, 0.22, 16)
+    seeds = np.arange(4551, 4551 + 16)
+    idx = np.arange(0, 13)
     sc_list = [[i, i] for i in c]
 
     print(c)
