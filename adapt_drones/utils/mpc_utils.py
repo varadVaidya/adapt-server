@@ -333,8 +333,8 @@ def get_reference_trajectory(eval_npz, idx, control_dt):
     # position
     reference_trajectory[:, 0:3] = resampled_traj[:, 1:4]
     reference_trajectory[:, 3:7] = np.array([1, 0, 0, 0])
-    reference_trajectory[:, 7:10] = resampled_traj[:, 4:7]
-    reference_trajectory[:, 10:] = np.zeros(3)
+    reference_trajectory[:, 7:10] = resampled_traj[:, 8:11]
+    reference_trajectory[:, 10:] = np.array([0, 0, 0])
 
     reference_timestamps = resampled_t
 

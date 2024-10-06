@@ -10,11 +10,17 @@ from adapt_drones.utils.mpc_utils import (
     unit_quat,
     quaternion_inverse,
 )
+from adapt_drones.utils.dynamics import CustomDynamics
 
 
 class Quadrotor3D:
 
-    def __init__(self, noisy: bool = False):
+    def __init__(
+        self,
+        ground_dynamics: CustomDynamics = None,
+        changed_dynamics: CustomDynamics = None,
+        noisy: bool = False,
+    ):
         """
         Initialize the quadrotor dynamics.
 
@@ -23,7 +29,6 @@ class Quadrotor3D:
 
         self.noisy = noisy
         # maximum thrust of the quadrotor in N
-        self.max_thrust = 20
 
         # state space
         self.pos = np.zeros((3,))
@@ -35,29 +40,82 @@ class Quadrotor3D:
         # input constraints
         self.max_input_value = 1  # full throttle
         self.min_input_value = 0  # no throttle
-
-        # dynamics
-        self.J = np.array([0.03, 0.03, 0.06])  # kg  m^2
-        self.mass = 1.0  # kg
-
-        # lenght of motor to CoG
-        self.length = 0.24  # m
-
-        # position of thrusters
-        h = np.cos(np.pi / 4) * self.length
-        self.x_f = np.array([h, -h, -h, h])
-        self.y_f = np.array([-h, -h, h, h])
-
-        # for z thrust toque
-        self.c = 0.013  # m
-        self.z_l_tau = np.array([-self.c, self.c, -self.c, self.c])
-
         # Gravity vector
         self.g = np.array([[0], [0], [9.81]])  # m s^-2
 
         # Actuation thrusts
         self.u_noiseless = np.array([0.0, 0.0, 0.0, 0.0])
         self.u = np.array([0.0, 0.0, 0.0, 0.0])  # N
+
+        # print(ground_dynamics, changed_dynamics)
+        # ^===========dynamics
+        if ground_dynamics is None or changed_dynamics is None:
+            print("Using default dynamics as one of the dynamics is not provided.")
+            self.mass = 1.0  # kg
+            self.mass_actual = self.mass + 0.2  # kg
+
+            self.J = np.array([0.03, 0.03, 0.06])  # kg  m^2
+            self.J_actual = self.J + 0.0001  # kg  m^2
+
+            # lenght of motor to CoG
+            self.length = 0.1  # m
+
+            # position of thrusters
+            h = np.cos(np.pi / 4) * self.length
+            self.x_f = np.array([h, -h, -h, h])
+            self.x_f_actual = self.x_f
+
+            self.y_f = np.array([-h, -h, h, h])
+            self.y_f_actual = self.y_f
+
+            # for z thrust toque
+            self.c = 0.013  # m
+            self.c_actual = self.c  # m
+            self.z_l_tau = np.array([-self.c, self.c, -self.c, self.c])
+            self.z_l_tau_actual = np.array(
+                [-self.c_actual, self.c_actual, -self.c_actual, self.c_actual]
+            )
+
+            self.max_thrust = 20.0  # N
+            self.max_thrust_actual = self.max_thrust  # N
+
+        else:
+            # actual dynamics = ground dynamics
+            # dynamics = changed dynamics
+            # where dynamics is mass, J, c, length, x_f, y_f, z_l_tau, max_thrust
+
+            self.mass = changed_dynamics.mass
+            self.mass_actual = ground_dynamics.mass
+
+            self.J = np.array(
+                [changed_dynamics.ixx, changed_dynamics.iyy, changed_dynamics.izz]
+            )
+            self.J_actual = np.array(
+                [ground_dynamics.ixx, ground_dynamics.iyy, ground_dynamics.izz]
+            )
+
+            self.length = changed_dynamics.arm_length
+            self.length_actual = ground_dynamics.arm_length
+
+            h = np.cos(np.pi / 4) * self.length
+            self.x_f = np.array([h, -h, -h, h])
+            self.y_f = np.array([-h, -h, h, h])
+
+            h_actual = np.cos(np.pi / 4) * self.length_actual
+            self.x_f_actual = np.array([h_actual, -h_actual, -h_actual, h_actual])
+            self.y_f_actual = np.array([-h_actual, -h_actual, h_actual, h_actual])
+
+            self.c = changed_dynamics.km_kf
+            self.c_actual = ground_dynamics.km_kf
+
+            self.z_l_tau = np.array([-self.c, self.c, -self.c, self.c])
+            self.z_l_tau_actual = np.array(
+                [-self.c_actual, self.c_actual, -self.c_actual, self.c_actual]
+            )
+
+            twr = 2.75
+            self.max_thrust_actual = self.mass_actual * 9.81 / twr
+            self.max_thrust = self.mass * 9.81 / twr
 
     def set_state(self, *args, **kwargs):
         """
@@ -134,12 +192,24 @@ class Quadrotor3D:
             self.u_noiseless[i] = max(
                 min(u_i, self.max_input_value), self.min_input_value
             )
-        self.u = self.u_noiseless * self.max_thrust
+
+        if self.noisy:
+            for i, u_i in enumerate(self.u_noiseless):
+                std = 0.02 * sqrt(u_i)
+                noise_u = np.random.normal(loc=0, scale=0.015)
+                u_i += noise_u
+                self.u[i] = max(min(u_i, self.max_input_value), self.min_input_value)
+                # self.u[i] = (
+                #     max(min(u_i - noise_u, self.max_input_value), self.min_input_value)
+                #     * self.max_thrust
+                # )
+        else:
+            self.u = self.u_noiseless * self.max_thrust_actual
 
         # Generate disturbance forces / torques
         if self.noisy:
-            f_d = np.random.normal(size=(3, 1), scale=10 * dt)
-            t_d = np.random.normal(size=(3, 1), scale=10 * dt)
+            f_d = np.zeros((3, 1))
+            t_d = np.zeros((3, 1))
         else:
             f_d = np.zeros((3, 1))
             t_d = np.zeros((3, 1))
@@ -222,12 +292,12 @@ class Quadrotor3D:
         :return: 3D velocity differential increment (vector): d[vel_x; vel_y; vel_z]/dt
         """
 
-        a_thrust = np.array([[0], [0], [np.sum(u)]]) / self.mass
+        a_thrust = np.array([[0], [0], [np.sum(u)]]) / self.mass_actual
 
         angle_quaternion = x[1]
 
         return np.squeeze(
-            -self.g + v_dot_q(a_thrust + f_d / self.mass, angle_quaternion)
+            -self.g + v_dot_q(a_thrust + f_d / self.mass_actual, angle_quaternion)
         )
 
     def f_rate(self, x, u, t_d):
@@ -243,25 +313,25 @@ class Quadrotor3D:
         return np.array(
             [
                 1
-                / self.J[0]
+                / self.J_actual[0]
                 * (
-                    u.dot(self.y_f)
+                    u.dot(self.y_f_actual)
                     + t_d[0]
-                    + (self.J[1] - self.J[2]) * rate[1] * rate[2]
+                    + (self.J_actual[1] - self.J_actual[2]) * rate[1] * rate[2]
                 ),
                 1
-                / self.J[1]
+                / self.J_actual[1]
                 * (
-                    -u.dot(self.x_f)
+                    -u.dot(self.x_f_actual)
                     + t_d[1]
-                    + (self.J[2] - self.J[0]) * rate[2] * rate[0]
+                    + (self.J_actual[2] - self.J_actual[0]) * rate[2] * rate[0]
                 ),
                 1
-                / self.J[2]
+                / self.J_actual[2]
                 * (
-                    u.dot(self.z_l_tau)
+                    u.dot(self.z_l_tau_actual)
                     + t_d[2]
-                    + (self.J[0] - self.J[1]) * rate[0] * rate[1]
+                    + (self.J_actual[0] - self.J_actual[1]) * rate[0] * rate[1]
                 ),
             ]
         ).squeeze()

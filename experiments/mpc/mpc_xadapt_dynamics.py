@@ -1,9 +1,10 @@
-""" Tracks a specified trajectory on the simplified simulator using the data-augmented MPC."""
+""" Evaluated Trajectory Scale with perfect dynamics. This will serve as the ideal baseline for the MPC controller.
+The dynamics scale is set to the xadapt's scale. """
 
-import time
 import numpy as np
+import time
 import pkg_resources
-from tqdm import tqdm
+import tqdm
 
 from adapt_drones.utils.mpc_utils import (
     separate_variables,
@@ -12,9 +13,16 @@ from adapt_drones.utils.mpc_utils import (
 )
 from adapt_drones.controller.mpc.quad_3d_mpc import Quad3DMPC
 from adapt_drones.controller.mpc.quad_3d import Quadrotor3D
+from adapt_drones.utils.dynamics import CustomDynamics
+from experiments.xadapt.scale_functions import *
+
+import mujoco
+from adapt_drones.utils.rotation import euler2mat
 
 
 def prepare_quadrotor_mpc(
+    ground_dynamics: CustomDynamics,
+    changed_dynamics: CustomDynamics,
     simulation_dt=1e-2,
     n_mpc_node=10,
     q_diagonal=None,
@@ -34,7 +42,9 @@ def prepare_quadrotor_mpc(
     if q_mask is None:
         q_mask = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]).T
 
-    my_quad = Quadrotor3D(noisy=noisy)
+    my_quad = Quadrotor3D(
+        ground_dynamics=ground_dynamics, changed_dynamics=changed_dynamics, noisy=noisy
+    )
 
     if quad_name is None:
         quad_name = "my_quad"
@@ -56,11 +66,46 @@ def prepare_quadrotor_mpc(
     return quad_mpc
 
 
-def main(noisy=False):
-    quad_mpc = prepare_quadrotor_mpc(noisy=noisy)
+def simulate_mpc_run():
+    pass
 
-    rng = np.random.default_rng(seed=0)
+
+def mpc_traj_seed_scale(idx, seed, scale):
+    """
+    Runs and evaluates MPC for a given trajectory, seed and scale.
+    Returns idx, seed, scale, mean error, rms error.
+    """
+    rng = np.random.default_rng(seed=seed)
+
+    xadapt_ground = Dynamics(seed=rng, c=scale, do_random=False)
+    xadapt_changed = Dynamics(seed=rng, c=scale, do_random=True)
+
+    ground_dynamics = CustomDynamics(
+        arm_length=xadapt_ground.length_scale(),
+        mass=xadapt_ground.mass_scale(),
+        ixx=xadapt_ground.ixx_yy_scale(),
+        iyy=xadapt_ground.ixx_yy_scale(),
+        izz=xadapt_ground.izz_scale(),
+        km_kf=xadapt_ground.torque_to_thrust(),
+    )
+
+    changed_dynamics = CustomDynamics(
+        arm_length=xadapt_changed.length_scale(),
+        mass=xadapt_changed.mass_scale(),
+        ixx=xadapt_changed.ixx_yy_scale(),
+        iyy=xadapt_changed.ixx_yy_scale(),
+        izz=xadapt_changed.izz_scale(),
+        km_kf=xadapt_changed.torque_to_thrust(),
+    )
+
+    quad_mpc = prepare_quadrotor_mpc(
+        ground_dynamics=ground_dynamics,
+        changed_dynamics=changed_dynamics,
+        noisy=True,
+    )
+
     my_quad = quad_mpc.quad
+    # print(my_quad.mass, my_quad.mass_actual)
     n_mpc_node = quad_mpc.n_nodes
     t_horizon = quad_mpc.t_horizon
     simulation_dt = quad_mpc.simulation_dt
@@ -72,23 +117,27 @@ def main(noisy=False):
         "adapt_drones", "assets/slow_pi_tcn_eval_mpc.npy"
     )
     trajector_dataset = np.load(traj_path)
-    traj_idx = 9
-
     reference_trajectory, reference_input, reference_timestamp = (
-        get_reference_trajectory(trajector_dataset, traj_idx, control_period)
+        get_reference_trajectory(trajector_dataset, idx, control_period)
     )
 
     reference_input[:, 0] = quad_mpc.quad.mass * 9.81 / quad_mpc.quad.max_thrust
-
     delta_pos = rng.uniform(-0.1, 0.1, 3)
-    delta_vel = rng.uniform(-0.1, 0.1, 3)
-    delta_ori = rng.uniform(-0.1, 0.1, 4)
-    delta_ori /= np.linalg.norm(delta_ori)
+
+    # whole mess oof euler angles. I HATE EULER ANGLES
+    delta_roll_pitch = rng.uniform(-0.15, 0.15, 2)
+    delta_quat = np.zeros(4)
+    euler = np.array([delta_roll_pitch[0], delta_roll_pitch[1], 0])
+    mat = euler2mat(euler).reshape(9)
+    mujoco.mju_mat2Quat(delta_quat, mat)
+
+    delta_vel = rng.uniform(-0.125, 0.125, 3)
     delta_rate = rng.uniform(-0.05, 0.05, 3)
 
-    delta_init_pos = np.concatenate([delta_pos, delta_ori, delta_vel, delta_rate])
-    quad_current_state = reference_trajectory[0, :] + delta_init_pos
-    # quad_current_state[3:7] /= np.linalg.norm(quad_current_state[3:7])
+    delta_init_pos = np.concatenate([delta_pos, delta_quat, delta_vel, delta_rate])
+
+    quad_current_state = (reference_trajectory[0, :] + delta_init_pos).tolist()
+    quad_current_state[3:7] = delta_quat / np.linalg.norm(delta_quat)
 
     my_quad.set_state(quad_current_state)
 
@@ -101,8 +150,7 @@ def main(noisy=False):
 
     total_sim_time = 0.0
 
-    print("Running Simulation")
-    for current_idx in tqdm(range(reference_trajectory.shape[0])):
+    for current_idx in range(reference_trajectory.shape[0]):
         quad_current_state = my_quad.get_state(quaternion=True, stacked=True)
         quad_trajectory[current_idx, :] = np.expand_dims(quad_current_state, axis=0)
 
@@ -148,12 +196,12 @@ def main(noisy=False):
     mean_error = np.mean(position_error)
     rms_error = np.sqrt(np.mean(position_error**2))
 
-    print("\n::::::::::::: SIMULATION RESULTS :::::::::::::\n")
-    print("Mean optimization time: %.3f ms" % mean_opt_time)
-    print("Tracking RMSE: %.7f m\n" % rms_error)
-    print("mean_error: ", mean_error)
+    return idx, seed, scale, mean_error, rms_error
 
 
 if __name__ == "__main__":
-    noisy = False
-    main(noisy=noisy)
+    c = np.linspace(0, 1, 15)
+    seeds = np.arange(4551, 4551 + 16)
+    idx = np.arange(0, 13)
+
+    print(mpc_traj_seed_scale(3, 4551, 0.2))

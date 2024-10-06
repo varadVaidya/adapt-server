@@ -4,6 +4,7 @@ import numpy as np
 
 from adapt_drones.controller.mpc.quad_3d_optim import Quad3DOptimizer
 from adapt_drones.controller.mpc.quad_3d import Quadrotor3D
+from adapt_drones.utils.mpc_utils import simulate_plant
 
 
 class Quad3DMPC:
@@ -99,32 +100,32 @@ class Quad3DMPC:
         # Simulate step
         self.quad.update(ref_u, self.simulation_dt)
 
-    def simulate_plant(self, w_opt, t_horizon=None, dt_vec=None, progress_bar=False):
-        """
-        Given a sequence of n inputs, evaluates the simulated discrete-time plant model n steps into the future. The
-        current drone state will not be changed by calling this method.
-        :param w_opt: sequence of control n x m control inputs, where n is the number of steps and m is the
-        dimensionality of a control input.
-        :param t_horizon: time corresponding to the duration of the n control inputs. In the case that the w_opt comes
-        from an MPC optimization, this parameter should be the MPC time horizon.
-        :param dt_vec: a vector of timestamps, the same length as w_opt, corresponding to the total time each input is
-        applied.
-        :param progress_bar: boolean - whether to show a progress bar on the console or not.
-        :return: the sequence of simulated quadrotor states.
-        """
+    # def simulate_plant(self, w_opt, t_horizon=None, dt_vec=None, progress_bar=False):
+    #     """
+    #     Given a sequence of n inputs, evaluates the simulated discrete-time plant model n steps into the future. The
+    #     current drone state will not be changed by calling this method.
+    #     :param w_opt: sequence of control n x m control inputs, where n is the number of steps and m is the
+    #     dimensionality of a control input.
+    #     :param t_horizon: time corresponding to the duration of the n control inputs. In the case that the w_opt comes
+    #     from an MPC optimization, this parameter should be the MPC time horizon.
+    #     :param dt_vec: a vector of timestamps, the same length as w_opt, corresponding to the total time each input is
+    #     applied.
+    #     :param progress_bar: boolean - whether to show a progress bar on the console or not.
+    #     :return: the sequence of simulated quadrotor states.
+    #     """
 
-        if t_horizon is None and dt_vec is None:
-            t_horizon = self.t_horizon
-
-        return simulate_plant(
-            self.quad,
-            w_opt,
-            simulation_dt=self.simulation_dt,
-            simulate_func=self.simulate,
-            t_horizon=t_horizon,
-            dt_vec=dt_vec,
-            progress_bar=progress_bar,
-        )
+    #     if t_horizon is None and dt_vec is None:
+    #         t_horizon = self.t_horizon
+    #     print("IS THIS FUNCTRION BEING CALLED?")
+    #     return simulate_plant(
+    #         self.quad,
+    #         w_opt,
+    #         simulation_dt=self.simulation_dt,
+    #         simulate_func=self.simulate,
+    #         t_horizon=t_horizon,
+    #         dt_vec=dt_vec,
+    #         progress_bar=progress_bar,
+    #     )
 
     @staticmethod
     def reshape_input_sequence(u_seq):
