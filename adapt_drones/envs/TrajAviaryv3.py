@@ -402,9 +402,12 @@ class TrajAviaryv3(BaseAviary):
             self.model.site_pos[self.com_site_id] = thrust  # thrust site
 
             # km_kf
-            _km_kf_avg = np.polyval(self.cfg.scale.avg_km_kf_fit, L)
-            _km_kf_std = np.polyval(self.cfg.scale.std_km_kf_fit, L)
+            _km_kf_avg = np.abs(np.polyval(self.cfg.scale.avg_km_kf_fit, self.arm_length))
+            _km_kf_std = np.polyval(self.cfg.scale.std_km_kf_fit, self.arm_length)
             _km_kf_std = 0.0 if _km_kf_std < 0.0 else _km_kf_std
+
+            while _km_kf_avg - _km_kf_std < 0.0:
+                _km_kf_std *= 0.9
 
             _km_kf = self.np_random.uniform(
                 _km_kf_avg - _km_kf_std, _km_kf_avg + _km_kf_std
