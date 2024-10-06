@@ -402,9 +402,14 @@ class TrajAviaryv3(BaseAviary):
             self.model.site_pos[self.com_site_id] = thrust  # thrust site
 
             # km_kf
-            _km_kf_avg = np.polyval(self.cfg.scale.avg_km_kf_fit, L)
-            _km_kf_std = np.polyval(self.cfg.scale.std_km_kf_fit, L)
+            _km_kf_avg = np.abs(
+                np.polyval(self.cfg.scale.avg_km_kf_fit, self.arm_length)
+            )
+            _km_kf_std = np.polyval(self.cfg.scale.std_km_kf_fit, self.arm_length)
             _km_kf_std = 0.0 if _km_kf_std < 0.0 else _km_kf_std
+
+            while _km_kf_avg - _km_kf_std < 0.0:
+                _km_kf_std *= 0.9
 
             _km_kf = self.np_random.uniform(
                 _km_kf_avg - _km_kf_std, _km_kf_avg + _km_kf_std
@@ -499,6 +504,8 @@ class TrajAviaryv3(BaseAviary):
 
         super().init_render()
         self._trace_ref_positions = collections.deque(maxlen=50)
+        self._wind_arrow = -1
+        self._wind_force_arrow = -1
 
     def render_frame(self):
         """
@@ -512,6 +519,24 @@ class TrajAviaryv3(BaseAviary):
             visuals.modify_scene(
                 self.renderer.scene, self._trace_positions, self._trace_ref_positions
             )
+            self._wind_arrow = visuals.render_vector(
+                scene=self.renderer.scene,
+                vector=self.model.opt.wind,
+                pos=self.position + np.array([0, 0, 0.05]),
+                scale=0.5,
+                color=np.array([0, 1, 0, 1]),
+                # geom_id=self._wind_arrow,
+            )
+
+            self._wind_force_arrow = visuals.render_vector(
+                scene=self.renderer.scene,
+                vector=self.data.qfrc_passive[:3],
+                pos=self.position + np.array([0, 0, 0.05]),
+                scale=0.5,
+                color=np.array([0, 0, 1, 1]),
+                # geom_id=self._wind_force_arrow,
+            )
+
             frame = self.renderer.render()
             self._frames.append(frame)
 
