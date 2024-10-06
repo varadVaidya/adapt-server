@@ -199,9 +199,9 @@ def mpc_traj_seed_scale(idx, seed, scale, give_MPC_truth=False):
 
 
 if __name__ == "__main__":
-    c = np.linspace(0, 1, 2)
-    seeds = np.arange(4551, 4551 + 3)
-    idx = np.arange(0, 2)
+    c = np.linspace(0, 1, 15)
+    seeds = np.arange(4551, 4551 + 16)
+    idx = np.arange(0, 13)
 
     print(c)
     print(seeds)
@@ -285,7 +285,7 @@ if __name__ == "__main__":
         # traj_mpc_eval = sorted_traj_eval[:, 3:-3, :, :]
 
         # compile the data into a csv file contain errors and std dev
-        data_compile = np.zeros((traj_mpc_eval.shape[0] * traj_mpc_eval.shape[1], 6))
+        data_compile = np.zeros((traj_mpc_eval.shape[0] * traj_mpc_eval.shape[2], 6))
 
         # ^ 0: idx, 1: c,
         # ^ 3:  avg mean error, 4: std dev mean error,
@@ -342,8 +342,8 @@ if __name__ == "__main__":
 
             # If the row exists, round and concatenate mean_error and std_dev_mean_error
             if not row.empty:
-                mean_error = round(row["mean_error"].values[0], 3)
-                std_dev_mean_error = round(row["std_dev_mean_error"].values[0], 3)
+                mean_error = round(row["mean_error"].values[0], 4)
+                std_dev_mean_error = round(row["std_dev_mean_error"].values[0], 4)
                 return f"{mean_error} \pm {std_dev_mean_error}"
             else:
                 return "No match found"
