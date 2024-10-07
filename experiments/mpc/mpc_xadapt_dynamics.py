@@ -7,6 +7,7 @@ import time
 import pkg_resources
 import tqdm
 import concurrent.futures
+import multiprocessing as mp
 
 from adapt_drones.utils.mpc_utils import (
     separate_variables,
@@ -233,22 +234,24 @@ if __name__ == "__main__":
         print("=====================================================================")
         print(f"Running MPC with {'ground' if MPC_truth else 'changed'} dynamics")
 
-        # with concurrent.futures.ProcessPoolExecutor(max_workers=16) as executor:
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=4, mp_context=mp.get_context("fork")
+        ) as executor:
 
-        #     results = list(
-        #         tqdm.tqdm(
-        #             executor.map(
-        #                 mpc_traj_seed_scale,
-        #                 *zip(*map_iterable),
-        #             ),
-        #             total=len(map_iterable),
-        #         )
-        #     )
+            results = list(
+                tqdm.tqdm(
+                    executor.map(
+                        mpc_traj_seed_scale,
+                        *zip(*map_iterable),
+                    ),
+                    total=len(map_iterable),
+                )
+            )
 
-        # do plain old fashioned for loop
-        results = []
-        for i, seed, _c, MPC_truth in tqdm.tqdm(map_iterable, desc="Running MPC"):
-            results.append(mpc_traj_seed_scale(i, seed, _c, MPC_truth))
+        # # do plain old fashioned for loop
+        # results = []
+        # for i, seed, _c, MPC_truth in tqdm.tqdm(map_iterable, desc="Running MPC"):
+        #     results.append(mpc_traj_seed_scale(i, seed, _c, MPC_truth))
 
         for result in results:
             _idx, _seed, _c, _mean_error, _rms_error = result

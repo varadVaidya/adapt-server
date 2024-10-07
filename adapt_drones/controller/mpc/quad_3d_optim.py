@@ -174,7 +174,7 @@ class Quad3DOptimizer:
                 self.acados_models_dir, key_model.name + "_acados_ocp.json"
             )
             self.acados_ocp_solver[key] = AcadosOcpSolver(
-                ocp, json_file=json_file, verbose=False
+                ocp, json_file=json_file, verbose=False, generate=False, build=False
             )
 
     def quad_dynamics(self):
