@@ -53,10 +53,10 @@ def prepare_quadrotor_mpc(
     # Default Q and R matrix for LQR cost
     if q_diagonal is None:
         q_diagonal = np.array(
-            [2.5, 2.5, 2.5, 0.1, 0.1, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+            [2.0, 2.0, 2.0, 0.1, 0.1, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
         )
     if r_diagonal is None:
-        r_diagonal = np.array([0.1, 0.1, 0.1, 0.1])
+        r_diagonal = np.array([0.5, 0.5, 0.5, 0.5])
     if q_mask is None:
         q_mask = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]).T
 
@@ -217,6 +217,8 @@ def mpc_traj_seed_scale(
     )
     mean_error = np.mean(position_error)
     rms_error = np.sqrt(np.mean(position_error**2))
+
+    quad_mpc.quad_opt.clear_acados_models()
 
     return idx, seed, scale, mean_error, rms_error
 
