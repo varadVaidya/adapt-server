@@ -179,3 +179,4 @@ experiments/mpc/results
 experiments/mpc/results-scaled
 experiments/mpc/results-scaled-mp
 experiments/mpc/results-xadapt
+experiments/eval_traj/results-scale
