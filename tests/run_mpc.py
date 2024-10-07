@@ -4,6 +4,8 @@ import time
 import numpy as np
 import pkg_resources
 from tqdm import tqdm
+from typing import Union
+import random
 
 from adapt_drones.utils.mpc_utils import (
     separate_variables,
@@ -15,6 +17,7 @@ from adapt_drones.controller.mpc.quad_3d import Quadrotor3D
 
 
 def prepare_quadrotor_mpc(
+    rng,
     simulation_dt=1e-2,
     n_mpc_node=10,
     q_diagonal=None,
@@ -23,6 +26,7 @@ def prepare_quadrotor_mpc(
     quad_name=None,
     t_horizon=1.0,
     noisy=False,
+    acados_path_postfix: Union[str, None] = None,
 ):
     # Default Q and R matrix for LQR cost
     if q_diagonal is None:
@@ -34,7 +38,7 @@ def prepare_quadrotor_mpc(
     if q_mask is None:
         q_mask = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]).T
 
-    my_quad = Quadrotor3D(noisy=noisy)
+    my_quad = Quadrotor3D(noisy=noisy, rng=rng)
 
     if quad_name is None:
         quad_name = "my_quad"
@@ -51,15 +55,21 @@ def prepare_quadrotor_mpc(
         simulation_dt=simulation_dt,
         model_name=quad_name,
         q_mask=q_mask,
+        acados_path_postfix=acados_path_postfix,
     )
 
     return quad_mpc
 
 
 def main(noisy=False):
-    quad_mpc = prepare_quadrotor_mpc(noisy=noisy)
+    seed = -1
+    seed = random.randint(0, 2**32 - 1) if seed == -1 else seed
+    rng = np.random.default_rng(seed=454334)
 
-    rng = np.random.default_rng(seed=0)
+    quad_mpc = prepare_quadrotor_mpc(
+        noisy=noisy, acados_path_postfix="test_postfix", rng=rng
+    )
+
     my_quad = quad_mpc.quad
     n_mpc_node = quad_mpc.n_nodes
     t_horizon = quad_mpc.t_horizon
@@ -155,5 +165,5 @@ def main(noisy=False):
 
 
 if __name__ == "__main__":
-    noisy = False
+    noisy = True
     main(noisy=noisy)

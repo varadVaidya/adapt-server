@@ -8,6 +8,7 @@ import pkg_resources
 import tqdm
 import concurrent.futures
 import multiprocessing as mp
+from typing import Union
 
 from adapt_drones.utils.mpc_utils import (
     separate_variables,
@@ -27,6 +28,7 @@ import pandas as pd
 def prepare_quadrotor_mpc(
     ground_dynamics: CustomDynamics,
     changed_dynamics: CustomDynamics,
+    acados_path_postfix: Union[str, None],
     simulation_dt=1e-2,
     n_mpc_node=10,
     q_diagonal=None,
@@ -35,6 +37,7 @@ def prepare_quadrotor_mpc(
     quad_name=None,
     t_horizon=1.0,
     noisy=False,
+    rng=None,
 ):
     # Default Q and R matrix for LQR cost
     if q_diagonal is None:
@@ -47,7 +50,10 @@ def prepare_quadrotor_mpc(
         q_mask = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]).T
 
     my_quad = Quadrotor3D(
-        ground_dynamics=ground_dynamics, changed_dynamics=changed_dynamics, noisy=noisy
+        ground_dynamics=ground_dynamics,
+        changed_dynamics=changed_dynamics,
+        noisy=noisy,
+        rng=rng,
     )
 
     if quad_name is None:
@@ -65,12 +71,15 @@ def prepare_quadrotor_mpc(
         simulation_dt=simulation_dt,
         model_name=quad_name,
         q_mask=q_mask,
+        acados_path_postfix=acados_path_postfix,
     )
 
     return quad_mpc
 
 
-def mpc_traj_seed_scale(idx, seed, scale, give_MPC_truth=False):
+def mpc_traj_seed_scale(
+    idx, seed, scale, cfg: Config, acados_postfix: str, give_MPC_truth=False
+):
     """
     Runs and evaluates MPC for a given trajectory, seed and scale.
     Returns idx, seed, scale, mean error, rms error.
@@ -102,6 +111,8 @@ def mpc_traj_seed_scale(idx, seed, scale, give_MPC_truth=False):
         ground_dynamics=ground_dynamics,
         changed_dynamics=changed_dynamics if not give_MPC_truth else ground_dynamics,
         noisy=True,
+        acados_path_postfix=acados_postfix,
+        rng=rng,
     )
 
     my_quad = quad_mpc.quad
@@ -214,7 +225,7 @@ if __name__ == "__main__":
 
     give_MPC_truth = [False, True]
 
-    print(mpc_traj_seed_scale(0, 4551, 1, False))
+    print(mpc_traj_seed_scale(0, 4551, c[0], cfg, f"0_4551_{c[0]}", False))
 
     for i, MPC_truth in enumerate(give_MPC_truth):
 
@@ -222,9 +233,20 @@ if __name__ == "__main__":
         traj_mpc_eval[:, :, :, :] = np.nan
 
         prefix = "ground_dynamics_" if MPC_truth else "changed_dynamics_"
+        # get the cuurent file name
+        file_name = os.path.basename(__file__)
+        file_name = file_name.split(".")[0]
+        run_type = file_name.split("_")[1]
 
         map_iterable = [
-            (int(i), int(seed), float(_c), give_MPC_truth[0])
+            (
+                int(i),
+                int(seed),
+                float(_c),
+                cfg,
+                f"{run_type}_{i}_{seed}_{_c}",
+                give_MPC_truth[0],
+            )
             for i in idx
             for seed in seeds
             for _c in c
@@ -235,7 +257,7 @@ if __name__ == "__main__":
         print(f"Running MPC with {'ground' if MPC_truth else 'changed'} dynamics")
 
         with concurrent.futures.ProcessPoolExecutor(
-            max_workers=4, mp_context=mp.get_context("fork")
+            max_workers=8, mp_context=mp.get_context("fork")
         ) as executor:
 
             results = list(

@@ -31,6 +31,7 @@ class Quad3DOptimizer:
         q_mask: Union[np.ndarray, None] = None,
         model_name: str = "quad_3d",
         solver_options: Union[Dict, None] = None,
+        acados_path_postfix: Union[str, None] = None,
     ):
         # Weighted squared error loss function q = (p_xyz, a_xyz, v_xyz, r_xyz), r = (u1, u2, u3, u4)
         if q_cost is None:
@@ -101,6 +102,8 @@ class Quad3DOptimizer:
             q_diagonal *= q_mask
 
         self.acados_models_dir = "acados_models"
+        if acados_path_postfix is not None:
+            self.acados_models_dir = self.acados_models_dir + "/" + acados_path_postfix
         safe_mkdir_recursive(os.path.join(os.getcwd(), self.acados_models_dir))
 
         for key, key_model in zip(acados_model.keys(), acados_model.values()):
@@ -174,7 +177,7 @@ class Quad3DOptimizer:
                 self.acados_models_dir, key_model.name + "_acados_ocp.json"
             )
             self.acados_ocp_solver[key] = AcadosOcpSolver(
-                ocp, json_file=json_file, verbose=False, generate=False, build=False
+                ocp, json_file=json_file, verbose=False
             )
 
     def quad_dynamics(self):

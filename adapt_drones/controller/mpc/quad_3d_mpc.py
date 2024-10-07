@@ -1,6 +1,7 @@
 """ Implementation of the MPC for quadrotors."""
 
 import numpy as np
+from typing import Union
 
 from adapt_drones.controller.mpc.quad_3d_optim import Quad3DOptimizer
 from adapt_drones.controller.mpc.quad_3d import Quadrotor3D
@@ -21,6 +22,7 @@ class Quad3DMPC:
         model_name="my_quad",
         q_mask=None,
         solver_options=None,
+        acados_path_postfix: Union[str, None] = None,
     ):
         self.quad: Quadrotor3D = quad
         self.simulation_dt = simulation_dt
@@ -40,6 +42,7 @@ class Quad3DMPC:
             q_mask=q_mask,
             solver_options=solver_options,
             model_name=model_name,
+            acados_path_postfix=acados_path_postfix,
         )
 
     def clear(self):
