@@ -7,6 +7,8 @@ import numpy as np
 import casadi as cs
 from scipy.interpolate import interp1d
 
+from adapt_drones.utils.rotation import object_velocity, transform_spatial
+
 # from adapt_drones.controller.mpc.quad_3d import Quadrotor3D
 
 
@@ -339,3 +341,49 @@ def get_reference_trajectory(eval_npz, idx, control_dt):
     reference_timestamps = resampled_t
 
     return reference_trajectory, reference_inputs, reference_timestamps
+
+
+def fluid_force_model(mass, inertia, wind, pos, rot, vel, rho, beta):
+
+    factor = 3 / (2 * mass)
+
+    r_x = np.sqrt(factor * (inertia[1] + inertia[2] - inertia[0]))
+    r_y = np.sqrt(factor * (inertia[2] + inertia[0] - inertia[1]))
+    r_z = np.sqrt(factor * (inertia[0] + inertia[1] - inertia[2]))
+
+    # check if the radii are real numbers
+    assert np.all(np.isreal([r_x, r_y, r_z]))
+    r = np.array([r_x, r_y, r_z])
+
+    local_vel = object_velocity(pos, rot, vel)
+
+    wind6 = np.zeros(6)
+    wind6[3:] = wind
+    local_wind = transform_spatial(wind6, 0, pos, pos, rot)
+    # print(local_wind)
+
+    local_vel[3:] -= local_wind[3:]
+
+    wind_force = np.zeros(3)
+    wind_torque = np.zeros(3)
+
+    # viscous force
+
+    r_eq = np.sum(r) / 3
+    wind_force += -6 * beta * np.pi * r_eq * local_vel[3:]
+    wind_torque += -8 * beta * np.pi * r_eq**3 * local_vel[:3]
+
+    # drag force
+    prod_r = np.prod(r)
+    wind_force += -2 * rho * (prod_r / r) * np.abs(local_vel[3:]) * local_vel[3:]
+    sum_r_4 = np.sum(r**4)
+    wind_torque += (
+        (-1 / 2) * rho * r * (sum_r_4 - r**4) * np.abs(local_vel[:3]) * local_vel[:3]
+    )
+
+    force_world = np.dot(rot, wind_force)
+    torque_world = np.dot(rot, wind_torque)
+
+    force_torque_world = np.concatenate([force_world, torque_world])
+
+    return force_torque_world

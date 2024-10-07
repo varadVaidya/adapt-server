@@ -9,8 +9,11 @@ from adapt_drones.utils.mpc_utils import (
     v_dot_q,
     unit_quat,
     quaternion_inverse,
+    q_to_rot_mat,
 )
+from copy import copy
 from adapt_drones.utils.dynamics import CustomDynamics
+from adapt_drones.utils.mpc_utils import fluid_force_model
 
 
 class Quadrotor3D:
@@ -20,6 +23,7 @@ class Quadrotor3D:
         ground_dynamics: CustomDynamics = None,
         changed_dynamics: CustomDynamics = None,
         noisy: bool = False,
+        rng: np.random.Generator = np.random.default_rng(),
     ):
         """
         Initialize the quadrotor dynamics.
@@ -28,7 +32,16 @@ class Quadrotor3D:
         """
 
         self.noisy = noisy
+        self.rng = rng
         # maximum thrust of the quadrotor in N
+        if self.noisy:
+            # set wind disturbance
+            wind_speed = rng.uniform(0, 1.75)
+            wind_dir = rng.uniform(-1, 1, 3)
+            wind_dir /= np.linalg.norm(wind_dir)
+            self.wind = wind_speed * wind_dir
+        else:
+            self.wind = np.zeros(3)
 
         # state space
         self.pos = np.zeros((3,))
@@ -210,14 +223,28 @@ class Quadrotor3D:
             self.u = self.u_noiseless * self.max_thrust_actual
 
         # Generate disturbance forces / torques
+        self.wind = self.wind.clip(-2, 2)
         if self.noisy:
-            f_d = np.zeros((3, 1))
-            t_d = np.zeros((3, 1))
+            pos, angle, vel, a_rate = self.get_state(quaternion=True, stacked=False)
+            f_t = fluid_force_model(
+                copy(self.mass_actual),
+                self.J_actual.copy(),
+                self.wind.copy(),
+                self.pos.copy(),
+                q_to_rot_mat(self.angle.copy()),
+                np.concatenate([self.vel.copy(), self.a_rate.copy()]),
+                rho=1.2,
+                beta=0.00002,
+            )
+            f_d = f_t[:3, np.newaxis]
+            t_d = f_t[3:, np.newaxis]
+            self.wind += self.rng.normal(loc=0, scale=0.01, size=3)
         else:
             f_d = np.zeros((3, 1))
             t_d = np.zeros((3, 1))
 
         x = self.get_state(quaternion=True, stacked=False)
+        # print(x[0].shape, x[1].shape, x[2].shape, x[3].shape)
 
         # RK4 integration
         k1 = [
