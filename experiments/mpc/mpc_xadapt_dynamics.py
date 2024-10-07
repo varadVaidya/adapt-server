@@ -77,9 +77,7 @@ def prepare_quadrotor_mpc(
     return quad_mpc
 
 
-def mpc_traj_seed_scale(
-    idx, seed, scale, cfg: Config, acados_postfix: str, give_MPC_truth=False
-):
+def mpc_traj_seed_scale(idx, seed, scale, acados_postfix: str, give_MPC_truth=False):
     """
     Runs and evaluates MPC for a given trajectory, seed and scale.
     Returns idx, seed, scale, mean error, rms error.
@@ -225,7 +223,7 @@ if __name__ == "__main__":
 
     give_MPC_truth = [False, True]
 
-    print(mpc_traj_seed_scale(0, 4551, c[0], cfg, f"0_4551_{c[0]}", False))
+    print(mpc_traj_seed_scale(0, 4551, c[0], f"0_4551_{c[0]}", False))
 
     for i, MPC_truth in enumerate(give_MPC_truth):
 
@@ -243,7 +241,6 @@ if __name__ == "__main__":
                 int(i),
                 int(seed),
                 float(_c),
-                cfg,
                 f"{run_type}_{i}_{seed}_{_c}",
                 give_MPC_truth[0],
             )
