@@ -28,12 +28,12 @@ import tqdm as tqdm
 @dataclass
 class Args:
     env_id: str = "traj_v3"
-    run_name: str = "true-durian-33"
+    run_name: str = "lemon-armadillo-68"
     seed: int = 15092024
     agent: str = "RMA_DATT"
     scale: bool = True
     idx: Union[int, None] = None
-    wind_bool: bool = False
+    wind_bool: bool = True
 
 
 args = tyro.cli(Args)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     ]
     print(len(map_iterable))
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=16) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
 
         results = list(
             tqdm.tqdm(
@@ -125,20 +125,13 @@ if __name__ == "__main__":
 
     # # check for nans
     # print(np.argwhere(np.isnan(traj_rma_eval)))
-    run_folder = (
-        "runs/"
-        + cfg.experiment.wandb_project_name
-        + "/"
-        + cfg.grp_name
-        + "/"
-        + cfg.run_name
-        + "/"
-    )
-    results_folder = run_folder + "results-icra/"
+    run_folder = "experiments/xadapt/results-xadapt/"
+    prefix = "wind_" if cfg.wind_bool else "no_wind_"
+    results_folder = run_folder
 
     os.makedirs(results_folder, exist_ok=True)
 
-    np.save(results_folder + "xadapt_traj_rma.npy", traj_rma_eval)
+    np.save(results_folder + prefix + "xadapt_traj_rma.npy", traj_rma_eval)
 
     # traj_rma_eval = np.load(results_folder + "xadapt_traj_rma.npy")
     ## remove the seeds which performed worst across all scales, in
@@ -216,7 +209,7 @@ if __name__ == "__main__":
         "crashed",
     ]
     np.savetxt(
-        results_folder + "xadapt_traj_excel.csv",
+        results_folder + prefix + "xadapt_traj_excel.csv",
         data_compile,
         delimiter=",",
         header=",".join(header),
@@ -237,7 +230,7 @@ if __name__ == "__main__":
         else:
             return "No match found"
 
-    df = pd.read_csv(results_folder + "xadapt_traj_excel.csv")
+    df = pd.read_csv(results_folder + prefix + "xadapt_traj_excel.csv")
 
     tex_table = []
     for idx_value in np.unique(df["idx"]):
@@ -257,4 +250,4 @@ if __name__ == "__main__":
         index=np.unique(df["idx"]),
     )
     # save the table to a csv file
-    tex_table.to_csv(results_folder + "xadapt_table.csv")
+    tex_table.to_csv(results_folder + prefix + "xadapt_table.csv")
