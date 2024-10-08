@@ -205,5 +205,5 @@ for i, (data, data_range, ax, title, label, unit, scilimit) in enumerate(
 # )
 
 # plt.tight_layout()
-plt.savefig("scale_range_plot.png", dpi=300)
+# plt.savefig("scale_range_plot.png", dpi=300)
 plt.show()
