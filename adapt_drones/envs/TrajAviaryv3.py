@@ -242,7 +242,7 @@ class TrajAviaryv3(BaseAviary):
         )
 
         close_distance_reward = rewards.tolerance(
-            norm_position, bounds=(-isclose, isclose), margin=0.1
+            norm_position, bounds=(-isclose, isclose), margin=0.075
         )
 
         velocity_reward = rewards.tolerance(
