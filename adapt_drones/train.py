@@ -35,6 +35,7 @@ cfg = Config(
     scale=args.scale,
     agent=args.agent,
     wind_bool=args.wind_bool,
+    learning=Learning(total_timesteps=100_000_000),
 )
 
 # set random seeds
