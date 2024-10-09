@@ -253,13 +253,20 @@ class TrajAviaryv3(BaseAviary):
             norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
-        weights = np.array([0.6, 0.15, 0.2, 0.05])
+        angular_velocity_reward = rewards.tolerance(
+            np.linalg.norm(self.angular_velocity),
+            bounds=(-isclose, isclose),
+            margin=0.2,
+        )
+
+        weights = np.array([0.55, 0.15, 0.2, 0.05, 0.05])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
                 distance_reward,
                 close_distance_reward,
                 velocity_reward,
+                angular_velocity_reward,
                 action_reward,
             ]
         )
