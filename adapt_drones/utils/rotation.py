@@ -51,3 +51,45 @@ def euler2mat(euler):
     mat[..., 0, 1] = cj * si
     mat[..., 0, 0] = cj * ci
     return mat
+
+
+###=========== ROTATION UTILS THAT ARE DIRECT TRANSLATION OF MUJOCO CODE TO AID IN THE MPC IMPLEMENTATION ===========###
+
+
+# equivalent to mju_transformSpatial
+def transform_spatial(vec, flg_force, newpos, oldpos, rotnew2old=None):
+    # Create output and intermediate arrays
+    res = np.zeros(6)
+    cros = np.zeros(3)
+    dif = np.zeros(3)
+    tran = np.copy(vec)
+
+    # Compute difference between newpos and oldpos
+    dif = newpos - oldpos
+
+    # Apply translation
+    if flg_force:
+        # Cross product of dif and vec[3:6]
+        cros = np.cross(dif, vec[3:6])
+        tran[0:3] = vec[0:3] - cros
+    else:
+        # Cross product of dif and vec[0:3]
+        cros = np.cross(dif, vec[0:3])
+        tran[3:6] = vec[3:6] - cros
+
+    # Apply rotation if provided
+    if rotnew2old is not None:
+        # Apply rotation to angular part (first 3 elements) and linear part (next 3 elements)
+        res[0:3] = np.dot(rotnew2old.T, tran[0:3])
+        res[3:6] = np.dot(rotnew2old.T, tran[3:6])
+    else:
+        # If no rotation is provided, just copy the translated vector
+        res = np.copy(tran)
+
+    return res
+
+
+# equivalent to mj_object velocity only for the types and condition we care about
+def object_velocity(pos, rot, vel):
+
+    return transform_spatial(vel, 0, pos, pos, rot)

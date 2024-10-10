@@ -38,28 +38,41 @@ arm_lengths = np.linspace(_sc_lengths[0], _sc_lengths[1], 100)
 
 mass = np.polyval(cfg.scale.avg_mass_fit, arm_lengths)
 mass_std = np.polyval(cfg.scale.std_mass_fit, arm_lengths)
+mass_std[mass_std < 0] = 0
+
 mass_range = np.array([mass - mass_std, mass + mass_std])
-mass_range[mass_range < 0] = 0
+# mass_range[mass_range < 0] = 0
 
 ixx = np.polyval(cfg.scale.avg_ixx_fit, arm_lengths)
 ixx_std = np.polyval(cfg.scale.std_ixx_fit, arm_lengths)
+ixx_std[ixx_std < 0] = 0
+
 ixx_range = np.array([ixx - ixx_std, ixx + ixx_std])
-ixx_range[ixx_range < 0] = 0
+# ixx_range[ixx_range < 0] = 0
 
 iyy = np.polyval(cfg.scale.avg_iyy_fit, arm_lengths)
 iyy_std = np.polyval(cfg.scale.std_iyy_fit, arm_lengths)
+iyy_std[iyy_std < 0] = 0
+
 iyy_range = np.array([iyy - iyy_std, iyy + iyy_std])
-iyy_range[iyy_range < 0] = 0
+# iyy_range[iyy_range < 0] = 0
 
 izz = np.polyval(cfg.scale.avg_izz_fit, arm_lengths)
 izz_std = np.polyval(cfg.scale.std_izz_fit, arm_lengths)
+izz_std[izz_std < 0] = 0
+
 izz_range = np.array([izz - izz_std, izz + izz_std])
-izz_range[izz_range < 0] = 0
+# izz_range[izz_range < 0] = 0
 
 km_kf = np.polyval(cfg.scale.avg_km_kf_fit, arm_lengths)
 km_kf_std = np.polyval(cfg.scale.std_km_kf_fit, arm_lengths)
+km_kf_std[km_kf_std < 0] = 0
+
+while np.any(km_kf - km_kf_std < 5e-4):
+    km_kf_std[np.where(km_kf - km_kf_std < 5e-4)] *= 0.99
+
 km_kf_range = np.array([km_kf - km_kf_std, km_kf + km_kf_std])
-km_kf_range[km_kf_range < 0] = 0
+# km_kf_range[km_kf_range < 0] = 0
 
 
 fig = plt.figure(figsize=(10, 8))
@@ -128,68 +141,69 @@ for i, (data, data_range, ax, title, label, unit, scilimit) in enumerate(
     ax.xaxis.set_major_locator(plt.MaxNLocator(5))
     ax.yaxis.set_major_locator(plt.MaxNLocator(4))
 
-## --------------- EVAL RANGE PLOT ----------------- ##
+# ## --------------- EVAL RANGE PLOT ----------------- ##
 
 
-_sc_lengths = cfg.environment.scale_lengths
-arm_lengths = np.linspace(_sc_lengths[1], _sc_lengths[1] + 0.04, 100)
+# _sc_lengths = cfg.environment.scale_lengths
+# arm_lengths = np.linspace(_sc_lengths[1], _sc_lengths[1] + 0.04, 100)
 
-mass = np.polyval(cfg.scale.avg_mass_fit, arm_lengths)
-mass_std = np.polyval(cfg.scale.std_mass_fit, arm_lengths)
-mass_range = np.array([mass - mass_std, mass + mass_std])
-mass_range[mass_range < 0] = 0
+# mass = np.polyval(cfg.scale.avg_mass_fit, arm_lengths)
+# mass_std = np.polyval(cfg.scale.std_mass_fit, arm_lengths)
+# mass_range = np.array([mass - mass_std, mass + mass_std])
+# mass_range[mass_range < 0] = 0
 
-ixx = np.polyval(cfg.scale.avg_ixx_fit, arm_lengths)
-ixx_std = np.polyval(cfg.scale.std_ixx_fit, arm_lengths)
-ixx_range = np.array([ixx - ixx_std, ixx + ixx_std])
-ixx_range[ixx_range < 0] = 0
+# ixx = np.polyval(cfg.scale.avg_ixx_fit, arm_lengths)
+# ixx_std = np.polyval(cfg.scale.std_ixx_fit, arm_lengths)
+# ixx_range = np.array([ixx - ixx_std, ixx + ixx_std])
+# ixx_range[ixx_range < 0] = 0
 
-iyy = np.polyval(cfg.scale.avg_iyy_fit, arm_lengths)
-iyy_std = np.polyval(cfg.scale.std_iyy_fit, arm_lengths)
-iyy_range = np.array([iyy - iyy_std, iyy + iyy_std])
-iyy_range[iyy_range < 0] = 0
+# iyy = np.polyval(cfg.scale.avg_iyy_fit, arm_lengths)
+# iyy_std = np.polyval(cfg.scale.std_iyy_fit, arm_lengths)
+# iyy_range = np.array([iyy - iyy_std, iyy + iyy_std])
+# iyy_range[iyy_range < 0] = 0
 
-izz = np.polyval(cfg.scale.avg_izz_fit, arm_lengths)
-izz_std = np.polyval(cfg.scale.std_izz_fit, arm_lengths)
-izz_range = np.array([izz - izz_std, izz + izz_std])
-izz_range[izz_range < 0] = 0
+# izz = np.polyval(cfg.scale.avg_izz_fit, arm_lengths)
+# izz_std = np.polyval(cfg.scale.std_izz_fit, arm_lengths)
+# izz_range = np.array([izz - izz_std, izz + izz_std])
+# izz_range[izz_range < 0] = 0
 
-km_kf = np.polyval(cfg.scale.avg_km_kf_fit, arm_lengths)
-km_kf_std = np.polyval(cfg.scale.std_km_kf_fit, arm_lengths)
-km_kf_range = np.array([km_kf - km_kf_std, km_kf + km_kf_std])
-km_kf_range[km_kf_range < 0] = 0
+# km_kf = np.polyval(cfg.scale.avg_km_kf_fit, arm_lengths)
+# km_kf_std = np.polyval(cfg.scale.std_km_kf_fit, arm_lengths)
+# km_kf_range = np.array([km_kf - km_kf_std, km_kf + km_kf_std])
+# km_kf_range[km_kf_range < 0] = 0
 
 
-eval_fill_plot_list = [
-    (mass, mass_range, ax1, "Mass", "Mass", "(kg)"),
-    (ixx, ixx_range, ax2, "Inertia XX", "I_xx", "(kg m^2)"),
-    (iyy, iyy_range, ax3, "Inertia YY", "I_yy", "(kg m^2)"),
-    (izz, izz_range, ax4, "Inertia ZZ", "I_zz", "(kg m^2)"),
-    (km_kf, km_kf_range, ax5, "Propellor Constant", "K_m/K_f", "(m)"),
-]
+# eval_fill_plot_list = [
+#     (mass, mass_range, ax1, "Mass", "Mass", "(kg)"),
+#     (ixx, ixx_range, ax2, "Inertia XX", "I_xx", "(kg m^2)"),
+#     (iyy, iyy_range, ax3, "Inertia YY", "I_yy", "(kg m^2)"),
+#     (izz, izz_range, ax4, "Inertia ZZ", "I_zz", "(kg m^2)"),
+#     (km_kf, km_kf_range, ax5, "Propellor Constant", "K_m/K_f", "(m)"),
+# ]
 
-for i, (data, data_range, ax, title, label, unit) in enumerate(eval_fill_plot_list):
-    ax.fill_between(
-        arm_lengths,
-        data_range[0],
-        data_range[1],
-        alpha=0.5,
-        color="steelblue",
-        hatch="\\",
-    )
-    ax.plot(arm_lengths, data, color="royalblue")
+# for i, (data, data_range, ax, title, label, unit) in enumerate(eval_fill_plot_list):
+#     ax.fill_between(
+#         arm_lengths,
+#         data_range[0],
+#         data_range[1],
+#         alpha=0.5,
+#         color="steelblue",
+#         hatch="\\",
+#     )
+#     ax.plot(arm_lengths, data, color="royalblue")
 
-ax6.axis("off")
-legend = ax5.get_legend_handles_labels()
-ax6.legend(
-    legend[0],
-    legend[1],
-    loc="center",
-    fontsize=9,
-    bbox_to_anchor=(0.5, 0.5),
-    fancybox=True,
-    shadow=True,
-)
+# ax6.axis("off")
+# legend = ax5.get_legend_handles_labels()
+# ax6.legend(
+#     legend[0],
+#     legend[1],
+#     loc="center",
+#     fontsize=9,
+#     bbox_to_anchor=(0.5, 0.5),
+#     fancybox=True,
+#     shadow=True,
+# )
 
 # plt.tight_layout()
+# plt.savefig("scale_range_plot.png", dpi=300)
 plt.show()

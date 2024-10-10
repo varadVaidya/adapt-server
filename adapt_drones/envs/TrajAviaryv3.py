@@ -241,6 +241,10 @@ class TrajAviaryv3(BaseAviary):
             norm_position, bounds=(-isclose, isclose), margin=0.75
         )
 
+        close_distance_reward = rewards.tolerance(
+            norm_position, bounds=(-isclose, isclose), margin=0.075
+        )
+
         velocity_reward = rewards.tolerance(
             norm_velocity, bounds=(-isclose, isclose), margin=margin
         )
@@ -249,12 +253,20 @@ class TrajAviaryv3(BaseAviary):
             norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
-        weights = np.array([0.75, 0.2, 0.05])
+        angular_velocity_reward = rewards.tolerance(
+            np.linalg.norm(self.angular_velocity),
+            bounds=(-isclose, isclose),
+            margin=0.2,
+        )
+
+        weights = np.array([0.55, 0.15, 0.2, 0.05, 0.05])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
                 distance_reward,
+                close_distance_reward,
                 velocity_reward,
+                angular_velocity_reward,
                 action_reward,
             ]
         )
@@ -408,7 +420,7 @@ class TrajAviaryv3(BaseAviary):
             _km_kf_std = np.polyval(self.cfg.scale.std_km_kf_fit, self.arm_length)
             _km_kf_std = 0.0 if _km_kf_std < 0.0 else _km_kf_std
 
-            while _km_kf_avg - _km_kf_std < 0.0:
+            while _km_kf_avg - _km_kf_std < 5e-4:
                 _km_kf_std *= 0.9
 
             _km_kf = self.np_random.uniform(

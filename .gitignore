@@ -175,3 +175,10 @@ adapt_drones/assets/slow_pi_tcn_train.npy
 runs_tmp
 acados_models
 adapt_drones/assets/slow_pi_tcn_eval_mpc.npy
+experiments/mpc/results
+experiments/mpc/results-scaled
+experiments/mpc/results-scaled-mp
+experiments/mpc/results-xadapt
+experiments/eval_traj/results-scale
+experiments/xadapt/results-xadapt
+adapt_drones/assets/old

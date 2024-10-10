@@ -26,6 +26,7 @@ class Args:
     agent: str = "RMA_DATT"
     scale: bool = True
     idx: Union[int, None] = None
+    wind_bool: bool = True
 
 
 args = tyro.cli(Args)
@@ -36,6 +37,7 @@ cfg = Config(
     run_name=args.run_name,
     agent=args.agent,
     scale=args.scale,
+    wind_bool=args.wind_bool,
 )
 
 current_branch_name = (
