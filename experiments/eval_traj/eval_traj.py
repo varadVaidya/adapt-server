@@ -102,7 +102,8 @@ if __name__ == "__main__":
         prefix = "wind_" if env_run[2] else "no_wind_"
 
         with concurrent.futures.ProcessPoolExecutor(
-            max_workers=56,
+            max_workers=10,
+            mp_context=mp.get_context("spawn"),
         ) as executor:
             results = list(
                 tqdm.tqdm(

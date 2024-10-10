@@ -109,7 +109,7 @@ if __name__ == "__main__":
         ]
         print(len(map_iterable))
 
-        with concurrent.futures.ProcessPoolExecutor(max_workers=56) as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
 
             results = list(
                 tqdm.tqdm(
