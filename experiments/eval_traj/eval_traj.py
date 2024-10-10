@@ -103,7 +103,6 @@ if __name__ == "__main__":
 
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=56,
-            mp_context=mp.get_context("spawn"),
         ) as executor:
             results = list(
                 tqdm.tqdm(
