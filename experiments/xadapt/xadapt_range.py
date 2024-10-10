@@ -48,7 +48,7 @@ cfg = Config(
 )
 
 
-def simulate_traj_rma(idx, seed, c):
+def simulate_traj_rma(idx, seed, c, cfg):
     mean_error = 0
     rms_error = 0
 
@@ -85,9 +85,15 @@ if __name__ == "__main__":
 
         print(f"Running evaluation for {args.run_name} with wind: {args.wind_bool}")
 
-        cfg.env_id = args.env_id
-        cfg.run_name = args.run_name
-        cfg.wind_bool = args.wind_bool
+        cfg = Config(
+            env_id=args.env_id,
+            seed=args.seed,
+            eval=True,
+            run_name=args.run_name,
+            agent=args.agent,
+            scale=args.scale,
+            wind_bool=args.wind_bool,
+        )
 
         c = np.linspace(0, 1, 16)
         seeds = np.arange(4551, 4551 + 16)
@@ -105,11 +111,14 @@ if __name__ == "__main__":
         traj_rma_eval[:, :, :, :] = np.nan
 
         map_iterable = [
-            (int(i), int(seed), float(_c)) for i in idx for seed in seeds for _c in c
+            (int(i), int(seed), float(_c), cfg)
+            for i in idx
+            for seed in seeds
+            for _c in c
         ]
         print(len(map_iterable))
 
-        with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
 
             results = list(
                 tqdm.tqdm(

@@ -33,14 +33,13 @@ class Args:
 
 
 def evaluate_per_seed_per_scale(seed, scale, cfg, idx):
-    rma_datt_scale_results = np.zeros(9)
+    rma_datt_scale_results = np.zeros(8)
     cfg.seed = seed
     cfg.environment.scale_lengths = scale
     cfg.scale.scale_lengths = scale
 
-    results = paper_RMA_DATT_eval(
-        cfg=cfg, best_model=True, idx=idx, return_traj_len=True
-    )
+    results = paper_RMA_DATT_eval(cfg=cfg, best_model=True, idx=idx)
+
     rma_datt_scale_results[0] = scale[0]
     rma_datt_scale_results[1] = seed
     rma_datt_scale_results[2:] = results
@@ -69,9 +68,9 @@ if __name__ == "__main__":
             wind_bool=args.wind_bool,
         )
 
-        c = np.linspace(0.05, 0.22, 16)
-        seeds = np.arange(4551, 4551 + 16)
-        idx = np.arange(0, 14)
+        c = np.linspace(0.05, 0.22, 1)
+        seeds = np.arange(4551, 4551 + 8)
+        idx = np.arange(0, 2)
         sc_list = [[i, i] for i in c]
 
         print(sc_list)
@@ -83,7 +82,7 @@ if __name__ == "__main__":
         num_idx = len(idx)
 
         map_iterable = [
-            (int(seed), scale, cfg, i)
+            (int(seed), list(scale), cfg, int(i))
             for seed in seeds
             for scale in sc_list
             for i in idx
@@ -91,7 +90,7 @@ if __name__ == "__main__":
 
         print(len(map_iterable))
 
-        print(evaluate_per_seed_per_scale(*map_iterable[0]))
+        # print(evaluate_per_seed_per_scale(*map_iterable[0]))
 
         # for i in tqdm.tqdm(range(len(map_iterable))):
         #     print(evaluate_per_seed_per_scale(*map_iterable[i]))
@@ -101,10 +100,7 @@ if __name__ == "__main__":
 
         prefix = "wind_" if env_run[2] else "no_wind_"
 
-        with concurrent.futures.ProcessPoolExecutor(
-            max_workers=10,
-            mp_context=mp.get_context("spawn"),
-        ) as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
             results = list(
                 tqdm.tqdm(
                     executor.map(evaluate_per_seed_per_scale, *zip(*map_iterable)),
