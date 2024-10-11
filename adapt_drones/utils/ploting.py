@@ -86,6 +86,4 @@ def data_plot(
     anchr_text = AnchoredText(anchr_text, loc=2)
     axs["x-y_plot"].add_artist(anchr_text)
 
-    plt.show()
-
     plt.savefig(save_path + save_prefix + ".png")
