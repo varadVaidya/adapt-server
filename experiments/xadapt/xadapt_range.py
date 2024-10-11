@@ -125,6 +125,7 @@ if __name__ == "__main__":
                     executor.map(
                         simulate_traj_rma,
                         *zip(*map_iterable),
+                        chunksize=2,
                     ),
                     total=len(map_iterable),
                 )
