@@ -176,6 +176,8 @@ class Quad3DOptimizer:
             json_file = os.path.join(
                 self.acados_models_dir, key_model.name + "_acados_ocp.json"
             )
+
+            self.json_file = json_file
             self.acados_ocp_solver[key] = AcadosOcpSolver(
                 ocp, json_file=json_file, verbose=False
             )
@@ -302,7 +304,7 @@ class Quad3DOptimizer:
         """
         Removes previous stored acados models to avoid conflicts with new models.
         """
-        json_file = os.path.join(self.acados_models_dir, "acados_ocp.json")
+        json_file = self.json_file
 
         if os.path.exists(json_file):
             os.remove(json_file)
