@@ -65,13 +65,13 @@ class Quadrotor3D:
         if ground_dynamics is None or changed_dynamics is None:
             print("Using default dynamics as one of the dynamics is not provided.")
             self.mass = 1.0  # kg
-            self.mass_actual = self.mass + 0.2  # kg
+            self.mass_actual = self.mass  # kg
 
-            self.J = np.array([0.03, 0.03, 0.06])  # kg  m^2
-            self.J_actual = self.J + 0.0001  # kg  m^2
+            self.J = np.array([0.03, 0.03, 0.05])  # kg  m^2
+            self.J_actual = self.J  # kg  m^2
 
             # lenght of motor to CoG
-            self.length = 0.1  # m
+            self.length = 0.12  # m
 
             # position of thrusters
             h = np.cos(np.pi / 4) * self.length
@@ -89,8 +89,8 @@ class Quadrotor3D:
                 [-self.c_actual, self.c_actual, -self.c_actual, self.c_actual]
             )
 
-            self.max_thrust = 20.0  # N
-            self.max_thrust_actual = self.max_thrust  # N
+            self.max_thrust = 2.75 * self.mass * 9.81  # N
+            self.max_thrust_actual = 2.75 * self.mass_actual * 9.81  # N
 
         else:
             # actual dynamics = ground dynamics
