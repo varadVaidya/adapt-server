@@ -52,9 +52,7 @@ def prepare_quadrotor_mpc(
 ):
     # Default Q and R matrix for LQR cost
     if q_diagonal is None:
-        q_diagonal = np.array(
-            [2.0, 2.0, 2.0, 0.1, 0.1, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
-        )
+        q_diagonal = np.array([5, 5, 5, 0.1, 0.1, 0.1, 0.5, 0.5, 0.5, 0.05, 0.05, 0.05])
     if r_diagonal is None:
         r_diagonal = np.array([0.5, 0.5, 0.5, 0.5])
     if q_mask is None:
@@ -124,6 +122,8 @@ def mpc_traj_seed_scale(
         noisy=True,
         acados_path_postfix=acados_postfix,
         rng=rng,
+        n_mpc_node=10,
+        t_horizon=1.0,
     )
 
     my_quad = quad_mpc.quad
@@ -131,7 +131,7 @@ def mpc_traj_seed_scale(
     n_mpc_node = quad_mpc.n_nodes
     t_horizon = quad_mpc.t_horizon
     simulation_dt = quad_mpc.simulation_dt
-    reference_over_sampling = 5
+    reference_over_sampling = 2
     control_period = t_horizon / (n_mpc_node * reference_over_sampling)
 
     # load reference trajectory
