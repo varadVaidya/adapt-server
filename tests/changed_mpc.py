@@ -50,7 +50,7 @@ def prepare_quadrotor_mpc(
     if q_mask is None:
         q_mask = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]).T
 
-    scale = 0.22
+    scale = 0.1
 
     scaled_ground = ScaledDynamics(seed=rng, arm_length=scale, cfg=cfg, do_random=False)
     scaled_changed = ScaledDynamics(seed=rng, arm_length=scale, cfg=cfg, do_random=True)
@@ -139,7 +139,7 @@ def main(noisy=False):
         acados_path_postfix="test_postfix",
         rng=rng,
         cfg=cfg,
-        n_mpc_node=5,
+        n_mpc_node=10,
         t_horizon=1,
     )
 
@@ -147,7 +147,7 @@ def main(noisy=False):
     n_mpc_node = quad_mpc.n_nodes
     t_horizon = quad_mpc.t_horizon
     simulation_dt = quad_mpc.simulation_dt
-    reference_over_sampling = 5
+    reference_over_sampling = 2
     control_period = t_horizon / (n_mpc_node * reference_over_sampling)
 
     print("Time Horizon: ", t_horizon)

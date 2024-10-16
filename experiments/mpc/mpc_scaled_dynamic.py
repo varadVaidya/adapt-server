@@ -122,7 +122,7 @@ def mpc_traj_seed_scale(
         noisy=True,
         acados_path_postfix=acados_postfix,
         rng=rng,
-        n_mpc_node=5,
+        n_mpc_node=10,
         t_horizon=1.0,
     )
 
@@ -131,7 +131,7 @@ def mpc_traj_seed_scale(
     n_mpc_node = quad_mpc.n_nodes
     t_horizon = quad_mpc.t_horizon
     simulation_dt = quad_mpc.simulation_dt
-    reference_over_sampling = 5
+    reference_over_sampling = 2
     control_period = t_horizon / (n_mpc_node * reference_over_sampling)
 
     # load reference trajectory
