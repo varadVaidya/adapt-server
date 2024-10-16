@@ -50,7 +50,7 @@ def prepare_quadrotor_mpc(
     if q_mask is None:
         q_mask = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]).T
 
-    scale = 0.05
+    scale = 0.22
 
     scaled_ground = ScaledDynamics(seed=rng, arm_length=scale, cfg=cfg, do_random=False)
     scaled_changed = ScaledDynamics(seed=rng, arm_length=scale, cfg=cfg, do_random=True)
@@ -130,7 +130,7 @@ def main(noisy=False):
         scale=args.scale,
         wind_bool=args.wind_bool,
     )
-    seed = 9
+    seed = 4553232
     seed = random.randint(0, 2**32 - 1) if seed == -1 else seed
     rng = np.random.default_rng(seed=seed)
 
@@ -159,7 +159,7 @@ def main(noisy=False):
         "adapt_drones", "assets/slow_pi_tcn_eval_mpc.npy"
     )
     trajector_dataset = np.load(traj_path)
-    traj_idx = 5
+    traj_idx = 1
 
     reference_trajectory, reference_input, reference_timestamp = (
         get_reference_trajectory(trajector_dataset, traj_idx, control_period)

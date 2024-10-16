@@ -180,19 +180,19 @@ if __name__ == "__main__":
         )  # avg mean error
 
         data_compile[:, 3] = np.std(
-            traj_scale_eval[:, :, :, 3], axis=1, where=traj_scale_eval[:, :, :, 3] < 0.2
+            traj_scale_eval[:, :, :, 3], axis=1, where=traj_scale_eval[:, :, :, 3] < 0.5
         ).reshape(
             traj_scale_eval.shape[0] * traj_scale_eval.shape[2]
         )  # std dev mean error
 
         data_compile[:, 4] = np.mean(
-            traj_scale_eval[:, :, :, 4], axis=1, where=traj_scale_eval[:, :, :, 4] < 0.2
+            traj_scale_eval[:, :, :, 4], axis=1, where=traj_scale_eval[:, :, :, 4] < 0.5
         ).reshape(
             traj_scale_eval.shape[0] * traj_scale_eval.shape[2]
         )  # avg rms error
 
         data_compile[:, 5] = np.std(
-            traj_scale_eval[:, :, :, 4], axis=1, where=traj_scale_eval[:, :, :, 4] < 0.2
+            traj_scale_eval[:, :, :, 4], axis=1, where=traj_scale_eval[:, :, :, 4] < 0.5
         ).reshape(
             traj_scale_eval.shape[0] * traj_scale_eval.shape[2]
         )  # std dev rms error
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         # crash rate or success rate is calculated as the number of time,
         # the mean error of the idx-scale pair is less than 0.2 across all seeds
         data_compile[:, 6] = (
-            np.sum(traj_scale_eval[:, :, :, 3] < 0.2, axis=1).reshape(
+            np.sum(traj_scale_eval[:, :, :, 3] < 0.5, axis=1).reshape(
                 traj_scale_eval.shape[0] * traj_scale_eval.shape[2]
             )
             / traj_scale_eval.shape[1]

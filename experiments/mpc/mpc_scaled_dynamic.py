@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
     give_MPC_truth = [False, True]
 
-    print(mpc_traj_seed_scale(0, 4551, c[0], cfg, f"0_4551_{c[0]}", False))
+    # print(mpc_traj_seed_scale(0, 4551, c[0], cfg, f"0_4551_{c[0]}", False))
 
     for i, MPC_truth in enumerate(give_MPC_truth):
 
