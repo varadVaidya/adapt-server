@@ -127,8 +127,8 @@ class Quadrotor3D:
             )
 
             twr = 2.75
-            self.max_thrust_actual = self.mass_actual * 9.81 / twr
-            self.max_thrust = self.mass * 9.81 / twr
+            self.max_thrust_actual = self.mass_actual * 9.81 * twr
+            self.max_thrust = self.mass * 9.81 * twr
 
     def set_state(self, *args, **kwargs):
         """
