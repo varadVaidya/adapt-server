@@ -622,6 +622,8 @@ def timed_RMA_DATT_eval(
 
     rng = np.random.default_rng(seed=cfg.seed)
 
+    torch.set_float32_matmul_precision("high")
+
     run_folder = (
         "runs/"
         + cfg.experiment.wandb_project_name
@@ -711,36 +713,38 @@ def timed_RMA_DATT_eval(
 
     mean_compute_time = 0.0
     start_time = time.time()
-    for i in range(len(t)):
-        env.unwrapped.target_position = ref_positon[i]
-        env.unwrapped.target_velocity = ref_velocity[i]
+    with torch.inference_mode():
+        for i in range(len(t)):
+            env.unwrapped.target_position = ref_positon[i]
+            env.unwrapped.target_velocity = ref_velocity[i]
 
-        env_obs = obs[: env.unwrapped.priv_info_shape]
-        state_obs = obs[
-            env.unwrapped.priv_info_shape : env.unwrapped.priv_info_shape
-            + env.unwrapped.state_obs_shape
-        ]
-        traj_obs = obs[env.unwrapped.priv_info_shape + env.unwrapped.state_obs_shape :]
+            env_obs = obs[: env.unwrapped.priv_info_shape]
+            state_obs = obs[
+                env.unwrapped.priv_info_shape : env.unwrapped.priv_info_shape
+                + env.unwrapped.state_obs_shape
+            ]
+            traj_obs = obs[
+                env.unwrapped.priv_info_shape + env.unwrapped.state_obs_shape :
+            ]
 
-        state_action = torch.cat((state_obs, action.squeeze(0)), dim=-1)
-        state_action_buffer = torch.cat(
-            (state_action.unsqueeze(-1), state_action_buffer[:, :-1].clone()), dim=-1
-        )
+            state_action = torch.cat((state_obs, action.squeeze(0)), dim=-1)
+            state_action_buffer = torch.cat(
+                (state_action.unsqueeze(-1), state_action_buffer[:, :-1].clone()),
+                dim=-1,
+            )
 
-        env_encoder = adapt_net(state_action_buffer.flatten().unsqueeze(0))
+            env_encoder = adapt_net(state_action_buffer.flatten().unsqueeze(0))
 
-        start_time = time.time()
-        action = agent.get_action_and_value(
-            obs.unsqueeze(0), predicited_enc=env_encoder
-        )[0]
+            start_time = time.time()
+            action = agent(obs.unsqueeze(0), predicited_enc=env_encoder)
 
-        mean_compute_time += time.time() - start_time
+            mean_compute_time += time.time() - start_time
 
-        obs, rew, truncated, terminated, info = env.step(action.cpu().numpy()[0])
-        obs = torch.tensor(obs, dtype=torch.float32).to(device)
+            obs, rew, truncated, terminated, info = env.step(action.cpu().numpy()[0])
+            obs = torch.tensor(obs, dtype=torch.float32).to(device)
 
-        position.append(env.unwrapped.position)
-        velocity.append(env.unwrapped.velocity)
+            position.append(env.unwrapped.position)
+            velocity.append(env.unwrapped.velocity)
 
     position = np.array(position)
     velocity = np.array(velocity)

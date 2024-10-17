@@ -204,3 +204,28 @@ class RMA_DATT(nn.Module):
             probs.entropy().sum(1),
             self.critic(x),
         )
+
+    def forward(self, x, predicited_enc):
+        """.
+        Method to call the forward pass of the model, during final evaluation
+
+        """
+        # x = observation.
+        env_obs = x[:, : self.priv_info_shape]
+        state_obs = x[
+            :, self.priv_info_shape : self.priv_info_shape + self.state_obs_shape
+        ]
+
+        traj_obs = x[:, self.priv_info_shape + self.state_obs_shape :]
+        env_encoder = predicited_enc
+        traj_encoder = self.traj_encoder(traj_obs)
+
+        x = torch.cat((state_obs, env_encoder, traj_encoder), dim=-1)
+
+        action_mean = self.actor_mean(x)
+        action_logstd = self.actor_logstd.expand_as(action_mean)
+        action_std = torch.exp(action_logstd)
+
+        probs = Normal(action_mean, action_std)
+
+        return probs.sample()
