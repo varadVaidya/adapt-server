@@ -66,10 +66,13 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(
         2,
         3,
-        figsize=(12, 10),
+        figsize=(10, 6.5),
         sharex=True,
         sharey=True,
         subplot_kw={"aspect": "auto"},
+        width_ratios=[1, 1, 1],
+        height_ratios=[1, 1],
+        # tight_layout=True,
     )
     xpos = np.array([_ for _ in range(scale.shape[0])])
 
@@ -131,5 +134,5 @@ if __name__ == "__main__":
         fancybox=True,
         shadow=True,
     )
-    # plt.tight_layout(rect=[0, 0, 1.25, 1.25])
+    # plt.tight_layout(rect=[0, 0, 1.5, 1.5], pad=0.1, h_pad=0.1, w_pad=0.1)
     plt.show()
