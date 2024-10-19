@@ -21,7 +21,7 @@ def data_to_box(eval_array, traj_idx, scale_idx):
         idx_sort_eval = np.argsort(np.mean(eval_array[i, :, :, 3], axis=1))
         eval_array[i, :, :, :] = eval_array[i, idx_sort_eval, :, :]
 
-    eval_array = eval_array[:, idx_sort_eval, :, :]
+    # eval_array = eval_array[:, idx_sort_eval, :, :]
 
     # # remove top 3 and bottom 3 seeds
     eval_array = eval_array[:, 3:-3, :, :]
