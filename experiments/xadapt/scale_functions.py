@@ -27,8 +27,8 @@ class Dynamics:
         )
 
     def length_scale(self):
-        # self.l = L_MIN + self.c * (L_MAX - L_MIN)
-        self.l = self.random_output_dynamics(L_MIN + self.c * (L_MAX - L_MIN))
+        self.l = L_MIN + self.c * (L_MAX - L_MIN)
+        # self.l = self.random_output_dynamics(L_MIN + self.c * (L_MAX - L_MIN))
         return self.l
 
     def mass_scale(self):
