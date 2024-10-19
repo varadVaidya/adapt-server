@@ -72,11 +72,11 @@ if __name__ == "__main__":
                 wind_bool=args.wind_bool,
             )
 
-            # cfg.environment.wind_speed = [max_wind_speed, max_wind_speed]
-            # cfg.environment.max_wind = max_wind_speed
+            cfg.environment.wind_speed = [max_wind_speed, max_wind_speed]
+            cfg.environment.max_wind = max_wind_speed
 
-            c = np.linspace(0.05, 0.22, 1)
-            seeds = np.arange(4551, 4551 + 8)
+            c = np.linspace(0.05, 0.22, 16)
+            seeds = np.arange(4551, 4551 + 16)
             idx = np.array([2, 5])
             sc_list = [[i, i] for i in c]
 

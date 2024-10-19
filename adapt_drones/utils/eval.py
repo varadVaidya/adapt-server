@@ -486,10 +486,6 @@ def paper_RMA_DATT_eval(
         + cfg.run_name
         + "/"
     )
-    results_folder = run_folder + "results-icra/"
-    datadump_folder = results_folder + "datadump/"
-
-    os.makedirs(results_folder, exist_ok=True)
 
     model_path = (
         run_folder + "best_model.pt" if best_model else run_folder + "final_model.pt"
@@ -534,30 +530,6 @@ def paper_RMA_DATT_eval(
 
     obs, _ = env.reset(seed=cfg.seed, options=options)
 
-    mass = env.unwrapped.model.body_mass[env.unwrapped.drone_id]
-    inertia = env.unwrapped.model.body_inertia[env.unwrapped.drone_id]
-    wind = env.unwrapped.model.opt.wind
-    com = env.unwrapped.model.body_ipos[env.unwrapped.drone_id]
-
-    prop_const = env.unwrapped.prop_const
-    arm_length = env.unwrapped.arm_length
-    thrust2weight = env.unwrapped.thrust2weight
-
-    text_plot = TextonPlot(
-        seed=f"Seed: {cfg.seed}",
-        mass=f"Mass: {mass:.3f}",
-        inertia=f"Inertia: {inertia}",
-        wind=f"Wind: {wind}",
-        com=f"Com:{com}",
-        prop_const=f"Prop Constant:{prop_const}",
-        arm_length=f"Arm Length:{arm_length}",
-        thrust2weight=f"TWR:{thrust2weight}",
-        mean_error="",
-        rms_error="",
-    )
-
-    # print("\n".join("{}".format(v) for k, v in asdict(text_plot).items()))
-
     t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(idx=idx)
 
     position, velocity = [], []
@@ -581,9 +553,7 @@ def paper_RMA_DATT_eval(
         )
         env_encoder = adapt_net(state_action_buffer.flatten().unsqueeze(0))
 
-        action = agent.get_action_and_value(
-            obs.unsqueeze(0), predicited_enc=env_encoder
-        )[0]
+        action = agent(obs.unsqueeze(0), predicited_enc=env_encoder)[0]
 
         obs, rew, truncated, terminated, info = env.step(action.cpu().numpy()[0])
         obs = torch.tensor(obs, dtype=torch.float32).to(device)
