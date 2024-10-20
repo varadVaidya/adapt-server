@@ -507,6 +507,11 @@ def paper_RMA_DATT_eval(
     traj_shape = env.unwrapped.reference_traj_shape
     action_shape = env.action_space.shape[0]
 
+    mass = env.unwrapped.model.body_mass[env.unwrapped.drone_id]
+    inertia = env.unwrapped.model.body_inertia[env.unwrapped.drone_id]
+    wind = env.unwrapped.model.opt.wind
+    com = env.unwrapped.model.body_ipos[env.unwrapped.drone_id]
+
     agent = RMA_DATT(
         priv_info_shape=priv_info_shape,
         state_shape=state_shape,
@@ -553,7 +558,7 @@ def paper_RMA_DATT_eval(
         )
         env_encoder = adapt_net(state_action_buffer.flatten().unsqueeze(0))
 
-        action = agent(obs.unsqueeze(0), predicited_enc=env_encoder)[0]
+        action = agent(obs.unsqueeze(0), predicited_enc=env_encoder)
 
         obs, rew, truncated, terminated, info = env.step(action.cpu().numpy()[0])
         obs = torch.tensor(obs, dtype=torch.float32).to(device)

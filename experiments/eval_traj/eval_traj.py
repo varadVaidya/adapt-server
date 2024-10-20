@@ -58,75 +58,73 @@ if __name__ == "__main__":
 
         print(f"Running evaluation for {args.run_name} with wind: {args.wind_bool}")
 
-        # cfg = Config(
-        #     env_id=args.env_id,
-        #     seed=args.seed,
-        #     eval=True,
-        #     run_name=args.run_name,
-        #     agent=args.agent,
-        #     scale=args.scale,
-        #     wind_bool=args.wind_bool,
-        # )
+        cfg = Config(
+            env_id=args.env_id,
+            seed=args.seed,
+            eval=True,
+            run_name=args.run_name,
+            agent=args.agent,
+            scale=args.scale,
+            wind_bool=args.wind_bool,
+        )
 
-        # c = np.linspace(0.05, 0.22, 16)
-        # seeds = np.arange(4551, 4551 + 16)
-        # idx = np.arange(0, 14)
-        # sc_list = [[i, i] for i in c]
+        c = np.linspace(0.05, 0.22, 16)
+        seeds = np.arange(4551, 4551 + 16)
+        idx = np.arange(0, 14)
+        sc_list = [[i, i] for i in c]
 
-        # print(sc_list)
-        # print(seeds)
-        # print(idx)
+        print(sc_list)
+        print(seeds)
+        print(idx)
 
-        # num_lengths = len(c)
-        # num_seeds = len(seeds)
-        # num_idx = len(idx)
+        num_lengths = len(c)
+        num_seeds = len(seeds)
+        num_idx = len(idx)
 
-        # map_iterable = [
-        #     (int(seed), list(scale), cfg, int(i))
-        #     for seed in seeds
-        #     for scale in sc_list
-        #     for i in idx
-        # ]
+        map_iterable = [
+            (int(seed), list(scale), cfg, int(i))
+            for seed in seeds
+            for scale in sc_list
+            for i in idx
+        ]
 
-        # print(len(map_iterable))
+        print(len(map_iterable))
 
         # # print(evaluate_per_seed_per_scale(*map_iterable[0]))
 
         # # for i in tqdm.tqdm(range(len(map_iterable))):
         # #     print(evaluate_per_seed_per_scale(*map_iterable[i]))
 
-        # traj_scale_eval = np.zeros((num_idx, num_seeds, num_lengths, 5))
-        # traj_scale_eval[:, :, :, :] = np.nan
+        traj_scale_eval = np.zeros((num_idx, num_seeds, num_lengths, 5))
+        traj_scale_eval[:, :, :, :] = np.nan
 
         prefix = "wind_" if env_run[2] else "no_wind_"
 
-        # with concurrent.futures.ProcessPoolExecutor(
-        #     max_workers=12, mp_context=mp.get_context("spawn")
-        # ) as executor:
-        #     results = list(
-        #         tqdm.tqdm(
-        #             executor.map(
-        #                 evaluate_per_seed_per_scale, *zip(*map_iterable), chunksize=25
-        #             ),
-        #             total=len(map_iterable),
-        #         )
-        #     )
+        with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
+            results = list(
+                tqdm.tqdm(
+                    executor.map(
+                        evaluate_per_seed_per_scale, *zip(*map_iterable), chunksize=1
+                    ),
+                    total=len(map_iterable),
+                )
+            )
 
-        # for result in results:
-        #     _idx, _seed, _c, _mean_error, _rms_error = result
-        #     idx_idx = np.where(idx == _idx)[0][0]
-        #     seed_idx = np.where(seeds == _seed)[0][0]
-        #     c_idx = np.where(c == _c)[0][0]
+        for result in results:
+            _idx, _seed, _c, _mean_error, _rms_error = result
+            idx_idx = np.where(idx == _idx)[0][0]
+            seed_idx = np.where(seeds == _seed)[0][0]
+            c_idx = np.where(c == _c)[0][0]
 
-        #     traj_scale_eval[idx_idx, seed_idx, c_idx] = [
-        #         _idx,
-        #         _seed,
-        #         _c,
-        #         _mean_error,
-        #         _rms_error,
-        #     ]
+            traj_scale_eval[idx_idx, seed_idx, c_idx] = [
+                _idx,
+                _seed,
+                _c,
+                _mean_error,
+                _rms_error,
+            ]
 
-        # print(traj_scale_eval.shape)
+        print(traj_scale_eval.shape)
 
         # # check for nans
         # print(np.argwhere(np.isnan(traj_scale_eval)))
