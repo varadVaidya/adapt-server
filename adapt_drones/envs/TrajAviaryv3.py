@@ -502,7 +502,8 @@ class TrajAviaryv3(BaseAviary):
             t, pos, vel = trajectory
             self.reference_trajectory = np.concatenate([t.reshape(-1, 1), pos, vel], 1)
 
-            self._kinematics_reset()
+            self.data.qpos = np.concatenate([pos[0], np.array([1, 0, 0, 0])])
+            self.data.qvel = np.concatenate([vel[0], np.zeros(3)])
 
             duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
             t = np.linspace(0, duration / self.mj_freq, duration)

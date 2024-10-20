@@ -184,3 +184,4 @@ experiments/xadapt/results-xadapt
 adapt_drones/assets/old
 experiments/mpc/results-scaled-for
 experiments/max_wind/results-wind
+experiments/max_speed/results-speed

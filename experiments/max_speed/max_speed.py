@@ -67,7 +67,7 @@ def evaluate_per_seed_per_scale(seed, scale, cfg, max_speed):
 
 if __name__ == "__main__":
     env_runs = [
-        ["traj_v3", "earthy-snowball-77", False],
+        ["traj_v3", "earthy-snowball-77", True],
         # ["traj_v3", "fine-universe-76", True],
     ]
 
@@ -87,9 +87,10 @@ if __name__ == "__main__":
         )
 
         c = np.linspace(0.05, 0.22, 16)
-        seeds = np.arange(4551, 4551 + 16)
+        seeds = np.arange(4551, 4551 + 20)
         sc_list = [[i, i] for i in c]
-        max_speeds = np.linspace(1, 6.5, 10)
+        max_speeds = np.arange(1.0, 7.0, step=0.5)
+        print("Max speeds:", max_speeds)
 
         print(c)
         print(seeds)
@@ -99,9 +100,9 @@ if __name__ == "__main__":
         num_seeds = len(seeds)
         num_speeds = len(max_speeds)
 
-        cfg.environment.wind_bool = False
-        cfg.environment.max_wind = 0.0
-        cfg.environment.wind_speed = [0.0, 0.0]
+        # cfg.environment.wind_bool = False
+        # cfg.environment.max_wind = 0.0
+        # cfg.environment.wind_speed = [0.0, 0.0]
 
         map_iterable = [
             (int(seed), list(scale), cfg, max_speed)
@@ -112,7 +113,7 @@ if __name__ == "__main__":
 
         print("\t", len(map_iterable))
 
-        # print(evaluate_per_seed_per_scale(*map_iterable[0]))
+        # print(evaluate_per_seed_per_scale(4551, [0.15, 0.15], cfg, 5.0))
 
         traj_speed_eval = np.zeros((num_speeds, num_seeds, num_lengths, 5))
         traj_speed_eval[:, :, :, :] = np.nan
