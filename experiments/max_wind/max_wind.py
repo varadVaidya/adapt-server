@@ -33,16 +33,11 @@ class Args:
 
 
 def evaluate_per_seed_per_scale(seed, scale, cfg, idx):
-    rma_datt_scale_results = np.zeros(8)
     cfg.seed = seed
     cfg.environment.scale_lengths = scale
     cfg.scale.scale_lengths = scale
 
     results = paper_RMA_DATT_eval(cfg=cfg, best_model=True, idx=idx)
-
-    rma_datt_scale_results[0] = scale[0]
-    rma_datt_scale_results[1] = seed
-    rma_datt_scale_results[2:] = results
 
     return idx, seed, scale[0], results[0], results[1]
 
@@ -76,6 +71,10 @@ if __name__ == "__main__":
         idx = np.array([2, 5])
         sc_list = [[i, i] for i in c]
 
+        print(c)
+        print(seeds)
+        print(idx)
+
         num_lengths = len(c)
         num_seeds = len(seeds)
         num_idx = len(idx)
@@ -87,23 +86,23 @@ if __name__ == "__main__":
             for i in idx
         ]
 
+        print(len(map_iterable))
+
         print(f"\tRunning {len(map_iterable)} evaluations")
 
         traj_wind_eval = np.zeros((num_idx, num_seeds, num_lengths, 5))
         traj_wind_eval[:, :, :, :] = np.nan
-
-        prefix = "wind_" if env_run[2] else "no_wind_"
-        prefix += f"{max_wind_speed}_"
 
         # results = []
         # for i in tqdm.tqdm(range(len(map_iterable))):
         #     results.append(evaluate_per_seed_per_scale(*map_iterable[i]))
 
         with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
+
             results = list(
                 tqdm.tqdm(
                     executor.map(
-                        evaluate_per_seed_per_scale, *zip(*map_iterable), chunksize=4
+                        evaluate_per_seed_per_scale, *zip(*map_iterable), chunksize=8
                     ),
                     total=len(map_iterable),
                 )
@@ -124,6 +123,8 @@ if __name__ == "__main__":
             ]
 
         run_folder = f"experiments/max_wind/results-wind/{env_run[1]}/"
+        prefix = "wind_" if env_run[2] else "no_wind_"
+        prefix += f"{max_wind_speed}_"
 
         os.makedirs(run_folder, exist_ok=True)
 
