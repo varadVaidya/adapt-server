@@ -468,7 +468,7 @@ class TrajAviaryv3(BaseAviary):
         wind_direction = wind_direction / np.linalg.norm(wind_direction)
         self.model.opt.wind = wind_magnitude * wind_direction
 
-    def eval_trajectory(self, idx=None):
+    def eval_trajectory(self, idx=None, trajectory=None):
         """Evaluation method that will be called by the eval script to
         generate the trajectory for the evaluation.
         Assumes that eval is set by the config file
@@ -477,24 +477,40 @@ class TrajAviaryv3(BaseAviary):
         idx: int: The index of the trajectory to be evaluated. If None, a trajectory is
         sampled randomly from the evaluation dataset.
         """
+        if trajectory is None:
+            eval_trajs = np.load(self.eval_trajectory_path)
 
-        eval_trajs = np.load(self.eval_trajectory_path)
+            idx = (
+                self.np_random.integers(0, eval_trajs.shape[0]) if idx is None else idx
+            )
+            eval_traj = eval_trajs[idx]
+            # print("eval traj", eval_traj.shape)
+            rows_not_nan = sum(~np.isnan(eval_traj[:, 1]))
+            self.reference_trajectory = eval_traj[:rows_not_nan]
 
-        idx = self.np_random.integers(0, eval_trajs.shape[0]) if idx is None else idx
-        eval_traj = eval_trajs[idx]
-        # print("eval traj", eval_traj.shape)
-        rows_not_nan = sum(~np.isnan(eval_traj[:, 1]))
-        self.reference_trajectory = eval_traj[:rows_not_nan]
+            self._kinematics_reset()
+            duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
 
-        self._kinematics_reset()
-        duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
+            t = np.linspace(0, duration / self.mj_freq, duration)
 
-        t = np.linspace(0, duration / self.mj_freq, duration)
+            reference_position = eval_traj[:duration, 1:4]
+            reference_velocity = eval_traj[:duration, 4:7]
 
-        reference_position = eval_traj[:duration, 1:4]
-        reference_velocity = eval_traj[:duration, 4:7]
+            return t, reference_position, reference_velocity
 
-        return t, reference_position, reference_velocity
+        else:
+            t, pos, vel = trajectory
+            self.reference_trajectory = np.concatenate([t.reshape(-1, 1), pos, vel], 1)
+
+            self._kinematics_reset()
+
+            duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
+            t = np.linspace(0, duration / self.mj_freq, duration)
+
+            reference_position = pos[:duration, :]
+            reference_velocity = vel[:duration, :]
+
+            return t, reference_position, reference_velocity
 
     def housekeeping(self):
         """
