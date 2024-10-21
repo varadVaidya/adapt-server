@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     data_compile = data_compile.T
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(5, 5))
     axs = fig.subplots(1, 1)
 
     scale_idx = [0, 5, 10, 14]

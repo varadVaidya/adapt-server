@@ -89,22 +89,30 @@ km_kf_range = np.array([km_kf - km_kf_std, km_kf + km_kf_std])
 
 
 train_fill_plot_list = [
-    (mass, mass_range, ax1, "Mass", "$M$", "$(kg)$", (0, 0)),
+    (mass, mass_range, ax1, "Mass $[kg]$", "$M$", "$(kg)$", (0, 0)),
     (
         ixx,
         ixx_range,
         ax2,
-        "Inertia XX (Inertia YY)",
+        "Inertia XX (YY) $[kg \ m^2]$",
         "$I_{xx} and I_{yy}$",
         "$(kg \ m^2)$",
         (-2, -2),
     ),
-    (izz, izz_range, ax3, "Inertia ZZ", "$I_{zz}$", "$(kg \ m^2)$", (-2, -2)),
+    (
+        izz,
+        izz_range,
+        ax3,
+        "Inertia ZZ $[kg \ m^2]$",
+        "$I_{zz}$",
+        "$(kg \ m^2)$",
+        (-2, -2),
+    ),
     (
         km_kf,
         km_kf_range,
         ax4,
-        "Propellor Constant",
+        "Propellor Constant $[m]$",
         "$K_m/K_f$",
         "$(m)$",
         (0, 0),
@@ -191,7 +199,7 @@ for i, (data, data_range, ax, title, label, unit) in enumerate(eval_fill_plot_li
         alpha=0.9,
         color=colours["eval"],
         # hatch="X",
-        edgecolor=colours["border_eval"],
+        # edgecolor=colours["border_eval"],
         linewidth=1,
         label="Eval Range",
     )
@@ -258,7 +266,22 @@ for i, (data, data_range, ax, title, label, unit) in enumerate(eval_fill_plot_li
 
 ax3.set_xlabel("Arm Length (m)")
 ax4.set_xlabel("Arm Length (m)")
-legend = ax4.get_legend_handles_labels()
+# legend = ax4.get_legend_handles_labels()
+from matplotlib.patches import Patch
+
+legend_handles = [
+    Patch(facecolor=colours["train"], label="Train Range"),
+    Patch(
+        facecolor=colours["eval"],
+        edgecolor=colours["border_eval"],
+        linewidth=1,
+        label="Eval Range",
+    ),
+]
+
+# print(legend[0][0])
+# legend[0][1].set(edgecolor=colours["border_eval"], linewidth=1)
+# legend[1].set(eedgecolor=colours["border_eval"], linewidth=1)
 # ax6.legend(
 #     legend[0],
 #     legend[1],
@@ -271,14 +294,13 @@ legend = ax4.get_legend_handles_labels()
 # )
 
 plt.legend(
-    legend[0],
-    legend[1],
+    handles=legend_handles,
     loc="lower left",
     fontsize=10,
     fancybox=True,
     shadow=True,
     # orientation="horizontal",
-    bbox_to_anchor=(-0.75, -0.3),
+    bbox_to_anchor=(-0.725, -0.325),
     ncols=2,
 )
 
