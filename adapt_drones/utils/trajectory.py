@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 
 def lemniscate_trajectory(
@@ -118,16 +119,116 @@ def lemniscate_trajectory(
     return t_ref, position_ref, velocity_ref
 
 
+def random_trajectory(seed, total_time=30, dt=0.01):
+
+    rng = np.random.default_rng(seed=seed)
+    num_waypoints = 10
+    t_waypoints = np.linspace(0, total_time, num_waypoints)
+
+    spline_durations = np.diff(t_waypoints)
+    num_splines = len(spline_durations)
+
+    waypoints_xy = rng.uniform(-3, 3, (num_waypoints, 2))
+    waypoints_z = rng.uniform(1, 3, num_waypoints)
+
+    waypoints = np.hstack((waypoints_xy, waypoints_z.reshape(-1, 1)))
+
+    velocity_constraints = np.zeros((num_waypoints, 3))
+    velocity_constraints[1:-1] = rng.uniform(-1.5, 1.5, (num_waypoints - 2, 3))
+
+    acceleration_constraints = np.zeros((num_waypoints, 3))
+    acceleration_constraints[1:-1] = rng.uniform(-0.5, 0.5, (num_waypoints - 2, 3))
+
+    boundary_conditions = np.zeros((num_splines * 6, 3))
+    coeffMatrix = np.zeros((num_splines * 6, num_splines * 6))
+
+    for i in range(num_splines):
+        T = spline_durations[i]
+        idx = i * 6
+
+        boundary_conditions[idx : idx + 6] = np.array(
+            [
+                waypoints[i],
+                velocity_constraints[i],
+                acceleration_constraints[i],
+                waypoints[i + 1],
+                velocity_constraints[i + 1],
+                acceleration_constraints[i + 1],
+            ]
+        )
+        coeffMatrix[idx : idx + 6, idx : idx + 6] = np.array(
+            [
+                [0, 0, 0, 0, 0, 1],
+                [0, 0, 0, 0, 1, 0],
+                [0, 0, 0, 1, 0, 0],
+                [T**5, T**4, T**3, T**2, T, 1],
+                [5 * T**4, 4 * T**3, 3 * T**2, 2 * T, 1, 0],
+                [20 * T**3, 12 * T**2, 6 * T, 2, 0, 0],
+            ]
+        )
+
+    xTrajCoeff, yTrajCoeff, zTrajCoeff = np.linalg.solve(
+        coeffMatrix, boundary_conditions
+    ).T
+
+    xVelCoeff, yVelCoeff, zVelCoeff = [], [], []
+
+    for i in range(num_splines):
+        idx = i * 6
+        xVelCoeff.append(np.polyder(xTrajCoeff[idx : idx + 6]))
+        yVelCoeff.append(np.polyder(yTrajCoeff[idx : idx + 6]))
+        zVelCoeff.append(np.polyder(zTrajCoeff[idx : idx + 6]))
+
+    xVelCoeff = np.array(xVelCoeff)
+    yVelCoeff = np.array(yVelCoeff)
+    zVelCoeff = np.array(zVelCoeff)
+
+    t = np.linspace(0, total_time, int(total_time / dt))
+    reference_trajectory = np.zeros((len(t), 6))
+
+    for i in range(num_splines):
+        T = spline_durations[i]
+        t_idx = np.logical_and(t >= t_waypoints[i], t <= t_waypoints[i + 1])
+        t_rel = t[t_idx] - t_waypoints[i]
+
+        reference_trajectory[t_idx, 0:3] = np.array(
+            [
+                np.polyval(xTrajCoeff[i * 6 : i * 6 + 6], t_rel),
+                np.polyval(yTrajCoeff[i * 6 : i * 6 + 6], t_rel),
+                np.polyval(zTrajCoeff[i * 6 : i * 6 + 6], t_rel),
+            ]
+        ).T
+
+        reference_trajectory[t_idx, 3:6] = np.array(
+            [
+                np.polyval(xVelCoeff[i], t_rel),
+                np.polyval(yVelCoeff[i], t_rel),
+                np.polyval(zVelCoeff[i], t_rel),
+            ]
+        ).T
+
+    velocity = reference_trajectory[:, 3:]
+    speed_velocity = np.linalg.norm(velocity, axis=1)
+
+    print(f"Max speed: {np.max(speed_velocity)}")
+
+    return t, reference_trajectory[:, :3], reference_trajectory[:, 3:]
+
+
 if __name__ == "__main__":
-    t, pos, vel = lemniscate_trajectory(
-        discretization_dt=0.01,
-        radius=5,
-        z=1,
-        lin_acc=0.25,
-        clockwise=True,
-        yawing=False,
-        v_max=5,
-    )
+    # t, pos, vel = lemniscate_trajectory(
+    #     discretization_dt=0.01,
+    #     radius=5,
+    #     z=1,
+    #     lin_acc=0.25,
+    #     clockwise=True,
+    #     yawing=False,
+    #     v_max=5,
+    # )
+    seed = -1
+    seed = seed if seed > 0 else random.randint(0, 2**32 - 1)
+    print(f"Seed: {seed}")
+    t, pos, vel = random_trajectory(seed=seed)
 
     import matplotlib.pyplot as plt
 
@@ -146,4 +247,8 @@ if __name__ == "__main__":
     axs[2].plot(pos[:, 0], pos[:, 1])
     axs[2].set_aspect("equal")
 
-    plt.savefig("lemniscate_trajectory.png")
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot(pos[:, 0], pos[:, 1], pos[:, 2])
+
+    plt.show()
