@@ -215,6 +215,139 @@ def random_trajectory(seed, total_time=30, dt=0.01):
     return t, reference_trajectory[:, :3], reference_trajectory[:, 3:]
 
 
+def loop_trajectory(
+    discretization_dt,
+    radius,
+    z,
+    lin_acc,
+    clockwise,
+    yawing,
+    v_max,
+):
+    """
+    Creates a circular trajectory on the x-y plane that increases speed by 1m/s at every revolution.
+
+    :param quad: Quadrotor model
+    :param discretization_dt: Sampling period of the trajectory.
+    :param radius: radius of loop trajectory in meters
+    :param z: z position of loop plane in meters
+    :param lin_acc: linear acceleration of trajectory (and successive deceleration) in m/s^2
+    :param clockwise: True if the rotation will be done clockwise.
+    :param yawing: True if the quadrotor yaws along the trajectory. False for 0 yaw trajectory.
+    :param v_max: Maximum speed at peak velocity. Revolutions needed will be calculated automatically.
+    :param map_name: Name of map to load its limits
+    :param plot: Whether to plot an analysis of the planned trajectory or not.
+    :return: The full 13-DoF trajectory with time and input vectors
+    """
+
+    assert z > 0
+
+    ramp_up_t = 2  # s
+
+    # Calculate simulation time to achieve desired maximum velocity with specified acceleration
+    t_total = 2 * v_max / lin_acc + 2 * ramp_up_t
+
+    # Transform to angular acceleration
+    alpha_acc = lin_acc / radius  # rad/s^2
+
+    # Generate time and angular acceleration sequences
+    # Ramp up sequence
+    ramp_t_vec = np.arange(0, ramp_up_t, discretization_dt)
+    ramp_up_alpha = alpha_acc * np.sin(np.pi / (2 * ramp_up_t) * ramp_t_vec) ** 2
+    # Acceleration phase
+    coasting_duration = (t_total - 4 * ramp_up_t) / 2
+    coasting_t_vec = ramp_up_t + np.arange(0, coasting_duration, discretization_dt)
+    coasting_alpha = np.ones_like(coasting_t_vec) * alpha_acc
+    # Transition phase: decelerate
+    transition_t_vec = np.arange(0, 2 * ramp_up_t, discretization_dt)
+    transition_alpha = alpha_acc * np.cos(np.pi / (2 * ramp_up_t) * transition_t_vec)
+    transition_t_vec += coasting_t_vec[-1] + discretization_dt
+    # Deceleration phase
+    down_coasting_t_vec = (
+        transition_t_vec[-1]
+        + np.arange(0, coasting_duration, discretization_dt)
+        + discretization_dt
+    )
+    down_coasting_alpha = -np.ones_like(down_coasting_t_vec) * alpha_acc
+    # Bring to rest phase
+    ramp_up_t_vec = (
+        down_coasting_t_vec[-1]
+        + np.arange(0, ramp_up_t, discretization_dt)
+        + discretization_dt
+    )
+    ramp_up_alpha_end = ramp_up_alpha - alpha_acc
+
+    # Concatenate all sequences
+    t_ref = np.concatenate(
+        (
+            ramp_t_vec,
+            coasting_t_vec,
+            transition_t_vec,
+            down_coasting_t_vec,
+            ramp_up_t_vec,
+        )
+    )
+    alpha_vec = np.concatenate(
+        (
+            ramp_up_alpha,
+            coasting_alpha,
+            transition_alpha,
+            down_coasting_alpha,
+            ramp_up_alpha_end,
+        )
+    )
+
+    # Calculate derivative of angular acceleration (alpha_vec)
+    ramp_up_alpha_dt = (
+        alpha_acc * np.pi / (2 * ramp_up_t) * np.sin(np.pi / ramp_up_t * ramp_t_vec)
+    )
+    coasting_alpha_dt = np.zeros_like(coasting_alpha)
+    transition_alpha_dt = (
+        -alpha_acc
+        * np.pi
+        / (2 * ramp_up_t)
+        * np.sin(np.pi / (2 * ramp_up_t) * transition_t_vec)
+    )
+    alpha_dt = np.concatenate(
+        (
+            ramp_up_alpha_dt,
+            coasting_alpha_dt,
+            transition_alpha_dt,
+            coasting_alpha_dt,
+            ramp_up_alpha_dt,
+        )
+    )
+
+    if not clockwise:
+        alpha_vec *= -1
+        alpha_dt *= -1
+
+    # Compute angular integrals
+    w_vec = np.cumsum(alpha_vec) * discretization_dt
+    angle_vec = np.cumsum(w_vec) * discretization_dt
+
+    # Compute position, velocity, acceleration, jerk
+    pos_traj_x = radius * np.sin(angle_vec)[np.newaxis, np.newaxis, :]
+    pos_traj_y = radius * np.cos(angle_vec)[np.newaxis, np.newaxis, :]
+    pos_traj_z = np.ones_like(pos_traj_x) * z
+
+    vel_traj_x = (radius * w_vec * np.cos(angle_vec))[np.newaxis, np.newaxis, :]
+    vel_traj_y = -(radius * w_vec * np.sin(angle_vec))[np.newaxis, np.newaxis, :]
+
+    xref = pos_traj_x.reshape(-1)
+    yref = pos_traj_y.reshape(-1)
+    zref = pos_traj_z.reshape(-1)
+
+    vxref = vel_traj_x.reshape(-1)
+    vyref = vel_traj_y.reshape(-1)
+    vzref = np.zeros_like(vxref)
+
+    position_ref = np.vstack((xref, yref, zref)).T
+    velocity_ref = np.vstack((vxref, vyref, vzref)).T
+
+    return t_ref, position_ref, velocity_ref
+
+
 if __name__ == "__main__":
     # t, pos, vel = lemniscate_trajectory(
     #     discretization_dt=0.01,
@@ -228,7 +361,16 @@ if __name__ == "__main__":
     seed = -1
     seed = seed if seed > 0 else random.randint(0, 2**32 - 1)
     print(f"Seed: {seed}")
-    t, pos, vel = random_trajectory(seed=seed)
+    # t, pos, vel = random_trajectory(seed=seed)
+    t, pos, vel = loop_trajectory(
+        discretization_dt=0.01,
+        radius=5,
+        z=1,
+        lin_acc=0.20,
+        clockwise=True,
+        yawing=False,
+        v_max=5,
+    )
 
     import matplotlib.pyplot as plt
 

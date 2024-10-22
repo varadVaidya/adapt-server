@@ -14,7 +14,7 @@ import pandas as pd
 
 from adapt_drones.cfgs.config import *
 from adapt_drones.utils.eval import paper_RMA_DATT_eval, paper_custom_traj_eval
-from adapt_drones.utils.trajectory import lemniscate_trajectory
+from adapt_drones.utils.trajectory import lemniscate_trajectory, loop_trajectory
 
 import concurrent.futures
 import tqdm as tqdm
@@ -48,7 +48,17 @@ def evaluate_per_seed_per_scale(seed, scale, cfg, max_speed):
     cfg.environment.scale_lengths = scale
     cfg.scale.scale_lengths = scale
 
-    trajectory = lemniscate_trajectory(
+    # trajectory = lemniscate_trajectory(
+    #     discretization_dt=0.01,
+    #     radius=5,
+    #     z=1,
+    #     clockwise=True,
+    #     lin_acc=0.25,
+    #     yawing=False,
+    #     v_max=max_speed,
+    # )
+
+    trajectory = loop_trajectory(
         discretization_dt=0.01,
         radius=5,
         z=1,
@@ -89,7 +99,8 @@ if __name__ == "__main__":
         c = np.linspace(0.05, 0.22, 16)
         seeds = np.arange(4551, 4551 + 20)
         sc_list = [[i, i] for i in c]
-        max_speeds = np.arange(1.0, 7.0, step=0.5)
+        max_speeds = np.arange(1.0, 10.0, step=0.5)
+        trajectory = "circle"
         print("Max speeds:", max_speeds)
 
         print(c)
@@ -145,7 +156,7 @@ if __name__ == "__main__":
                 _rms_error,
             ]
 
-        run_folder = f"experiments/max_speed/results-speed/{env_run[1]}/"
+        run_folder = f"experiments/max_speed/results-speed/{trajectory}/{env_run[1]}/"
         prefix = "wind_" if cfg.wind_bool else "no_wind_"
         results_folder = run_folder
 

@@ -12,10 +12,11 @@ plt.style.use("seaborn-v0_8-paper")
 if __name__ == "__main__":
     # Load the data
     SAVE_PATH = "/home/varad/robotics/adapt-figs/"
+    trajectory = "circle"
 
-    traj_speed_eval = np.load(
-        "experiments/max_speed/results-speed/earthy-snowball-77/wind_traj_speed_rma.npy"
-    )
+    trajectory_path = f"experiments/max_speed/results-speed/{trajectory}/earthy-snowball-77/wind_traj_speed_rma.npy"
+
+    traj_speed_eval = np.load(trajectory_path)
 
     for speeds in range(traj_speed_eval.shape[0]):
         idx_sort_eval = np.argsort(np.mean(traj_speed_eval[speeds, :, :, 3], axis=1))
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     axs.set_aspect("auto")
     axs.legend()
 
-    plt.savefig(SAVE_PATH + "max_speed_plot.svg", bbox_inches="tight")
-    plt.savefig(SAVE_PATH + "max_speed_plot.png", bbox_inches="tight")
+    plt.savefig(SAVE_PATH + trajectory + "_max_speed_plot.svg", bbox_inches="tight")
+    plt.savefig(SAVE_PATH + trajectory + "_max_speed_plot.png", bbox_inches="tight")
 
     plt.show()
