@@ -77,7 +77,7 @@ def simulate_traj_rma(idx, seed, c, cfg):
 if __name__ == "__main__":
     env_runs = [
         ["traj_v3", "earthy-snowball-77", True],
-        ["traj_v3", "fine-universe-76", True],
+        # ["traj_v3", "fine-universe-76", True],
     ]
 
     for env_run in env_runs:
@@ -118,14 +118,14 @@ if __name__ == "__main__":
         ]
         print(len(map_iterable))
 
-        with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
 
             results = list(
                 tqdm.tqdm(
                     executor.map(
                         simulate_traj_rma,
                         *zip(*map_iterable),
-                        chunksize=2,
+                        chunksize=8,
                     ),
                     total=len(map_iterable),
                 )

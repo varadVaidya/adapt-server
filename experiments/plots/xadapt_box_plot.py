@@ -58,11 +58,14 @@ if __name__ == "__main__":
         "experiments/eval_traj/results-scale/earthy-snowball-77/wind_traj_scale_eval.npy"
     )
 
-    colours = ["#fde725", "#5ec962", "#21918c"]
+    xadapt = np.load("experiments/xadapt/results-xadapt/xadapt_traj_eval.npy")
+
+    colours = ["#fde725", "#5ec962", "#21918c", "#3b528b"]
 
     box_ground_truth_mpc = data_to_box(ground_truth_mpc, idx, scale_idx)
     box_changed_mpc = data_to_box(changed_mpc, idx, scale_idx)
     box_rma = data_to_box(traj_rma, idx, scale_idx)
+    box_xadapt = data_to_box(xadapt, idx, scale_idx)
 
     fig, axs = plt.subplots(
         2,
@@ -80,25 +83,36 @@ if __name__ == "__main__":
     ground_boxes = []
     changed_boxes = []
     rma_boxes = []
+    xadapt_boxes = []
 
     for i in range(2):
         for j in range(3):
             ground_box = axs[i, j].boxplot(
                 box_ground_truth_mpc[i * 3 + j],
-                positions=xpos - 0.1,
+                positions=xpos - 0.3,
                 showfliers=False,
-                widths=0.25,
+                widths=0.20,
             )
 
             traj_rma_box = axs[i, j].boxplot(
-                box_rma[i * 3 + j], positions=xpos, showfliers=False, widths=0.25
+                box_rma[i * 3 + j],
+                positions=xpos - 0.1,
+                showfliers=False,
+                widths=0.20,
             )
 
             changed_mpc_box = axs[i, j].boxplot(
                 box_changed_mpc[i * 3 + j],
                 positions=xpos + 0.1,
                 showfliers=False,
-                widths=0.25,
+                widths=0.20,
+            )
+
+            xadapt_box = axs[i, j].boxplot(
+                box_xadapt[i * 3 + j],
+                positions=xpos + 0.3,
+                showfliers=False,
+                widths=0.20,
             )
 
             axs[i, j].set_title(traj_name[i * 3 + j], fontsize=10)
@@ -113,31 +127,31 @@ if __name__ == "__main__":
             ground_boxes.append(ground_box)
             rma_boxes.append(traj_rma_box)
             changed_boxes.append(changed_mpc_box)
+            xadapt_boxes.append(xadapt_box)
 
-    all_boxes = [ground_boxes, rma_boxes, changed_boxes]
+    all_boxes = [ground_boxes, rma_boxes, changed_boxes, xadapt_boxes]
 
-    for i in range(3):
+    for i in range(4):
         for box in all_boxes[i]:
             for patch in box["medians"]:
                 patch.set_color(colours[i])
                 patch.set_linewidth(2.5)
 
-    labels = ["Ground Truth MPC", "Ours", "Imperfect MPC"]
+    labels = ["Ground Truth MPC", "Ours", "Imperfect MPC", "Extreme Adaptation"]
 
-    for i in range(3):
+    for i in range(4):
         axs[0, 0].plot([], [], "-", linewidth=2.5, color=colours[i], label=labels[i])
 
     axs[0, 0].legend(
         bbox_to_anchor=(0.5, 0),
         loc="lower center",
         bbox_transform=fig.transFigure,
-        ncol=3,
+        ncol=4,
         fancybox=True,
         shadow=True,
     )
-    # plt.tight_layout(rect=[0, 0, 1.5, 1.5], pad=0.1, h_pad=0.1, w_pad=0.1)
 
-    plt.savefig(os.path.join(SAVE_PATH, "Scaled_Dynamics.svg"), bbox_inches="tight")
-    plt.savefig(os.path.join(SAVE_PATH, "Scaled_Dynamics.png"), bbox_inches="tight")
+    plt.savefig(SAVE_PATH + "xadapt_box_plot.svg", bbox_inches="tight")
+    plt.savefig(SAVE_PATH + "xadapt_box_plot.png", bbox_inches="tight")
 
     plt.show()
