@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     print(traj_speed_eval.shape)
 
-    max_speeds = traj_speed_eval[:10, 0, 0, 0]
+    max_speeds = traj_speed_eval[:12, 0, 0, 0]
 
     data_compile = np.zeros((max_speeds.shape[0], traj_speed_eval.shape[2]))
     print(data_compile.shape)
