@@ -30,6 +30,7 @@ class Config:
         HoverAviaryv1Config,
         TrajAviaryv2Config,
         TrajAviaryv3Config,
+        TrajAviaryPayv3Config,
     ]
     scale: Scale
     learning: Learning
@@ -91,6 +92,7 @@ class Config:
             "traj_v3": TrajAviaryv3Config,
             "traj_v2_ctbr": TrajAviaryv2CTBRConfig,
             "traj_v3_ctbr": TrajAviaryv3CTBRConfig,
+            "traj_pay_v3": TrajAviaryPayv3Config,
         }
 
         try:
