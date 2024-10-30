@@ -15,6 +15,7 @@ import os
 if __name__ == "__main__":
     eval_file = "adapt_drones/assets/slow_pi_tcn_eval.npy"
     eval_data = np.load(eval_file, allow_pickle=True)
+    SAVE_PATH = "/home/varad/robotics/adapt-figs/"
     print(eval_data.shape)
     # idx = [1, 5, 6, 7, 3, 9]
     idx = [1, 7, 2, 12, 8, 5]
@@ -33,7 +34,7 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(
         3,
         2,
-        figsize=(4.5, 7),
+        figsize=(5, 7.75),
         # squeeze=True,
         # dpi=300,
         layout="compressed",
@@ -82,6 +83,7 @@ if __name__ == "__main__":
             trajectory[:, 3],
             s=0.5,
             c=colour_bar.to_rgba(np.linalg.norm(trajectory[:, 4:7], axis=1)),
+            rasterized=True,
         )
 
         axs[i % 3, i // 3].set_xlim(subplot_x_lim[i])
@@ -138,5 +140,4 @@ if __name__ == "__main__":
         shrink=0.75,
         orientation="horizontal",
     )
-    # plt.savefig("experiments/eval_trajs/eval_trajs_portrait.png")
     plt.show()
