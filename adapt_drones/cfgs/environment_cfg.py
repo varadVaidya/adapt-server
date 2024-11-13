@@ -234,7 +234,7 @@ class TrajAviaryPayv3Config:
         trajectory_path = pkg_resources.resource_filename(
             "adapt_drones", "assets/slow_pi_tcn_train.npy"
         )
-        self.trajectory_dataset = np.load(trajectory_path)
+        self.trajectory_dataset = np.load(trajectory_path, allow_pickle=True)
         self.eval_trajectory_path = pkg_resources.resource_filename(
             "adapt_drones", "assets/slow_pi_tcn_eval.npy"
         )
