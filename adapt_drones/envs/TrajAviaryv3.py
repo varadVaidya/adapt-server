@@ -5,17 +5,19 @@ import mujoco
 import gymnasium as gym
 from gymnasium import spaces
 from collections import OrderedDict
+from typing import Union
 
 from adapt_drones.envs.BaseAviary import BaseAviary
 from adapt_drones.cfgs.config import Config
 import adapt_drones.utils.rotation as rotation
 import adapt_drones.utils.rewards as rewards
 import adapt_drones.utils.visuals as visuals
+from adapt_drones.utils.dynamics import CustomDynamics
 
 
 class TrajAviaryv3(BaseAviary):
     """
-    Tracks the trajectory collected using crazyflie.
+    Tracks the trajectory from slowed PITCN dataset.
     """
 
     # TODO: check is the action buffer is needed or not.
@@ -50,7 +52,7 @@ class TrajAviaryv3(BaseAviary):
         self.action_space = self._action_space()
         self.observation_space = self._observation_space()
 
-        self.action_buffer = np.zeros((2, 4))
+        self.action_buffer = np.zeros((4, 4))
 
     def _action_space(self):
         lower_bound = -1 * np.ones(4)
@@ -113,15 +115,14 @@ class TrajAviaryv3(BaseAviary):
 
         # trajectory reset
         self.reference_trajectory = self.reference_trajectory_reset()
-
         # kinematics reset
         self._kinematics_reset()
         # dynamics reset
-        self._dynamics_reset()
-
-        self.set_max_force_torque_limits()
+        self._dynamics_reset(options=options)
 
         self.housekeeping()
+        self.set_max_force_torque_limits()
+
         self.update_kinematic_data()
 
         initial_obs = self._compute_obs()
@@ -131,14 +132,25 @@ class TrajAviaryv3(BaseAviary):
 
     def step(self, action):
         """
-        Extends the step method in the BaseAviary class.
-        Adds action to the action buffer.
+        Extendeds the step method in the BaseAviary class to include action buffer
         """
+        if self.cfg.environment.wind_bool:
+            # change the wind slightly
+            self.model.opt.wind += self.np_random.normal(0, 0.01, 3)
+            self.model.opt.wind = np.clip(
+                self.model.opt.wind,
+                -self.cfg.environment.max_wind,
+                self.cfg.environment.max_wind,
+            )
+
+        # add action noise to the action
+        action += self.np_random.normal(0, 0.015, 4)
+        action = np.clip(action, -1, 1)
+
         obs, reward, terminated, truncated, info = super().step(action)
+        self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
-        self.action_buffer = np.concatenate((self.action_buffer[1:], [action]))
-
-        return obs, reward, terminated, truncated, info
+        return obs, reward, truncated, False, info
 
     def _compute_obs(self):
         """
@@ -161,10 +173,17 @@ class TrajAviaryv3(BaseAviary):
         delta_pos = self.target_position - self.position
         delta_vel = self.target_velocity - self.velocity
 
+        ## add gaussian 0 mean noise to delta_pos and delta_vel
+        delta_pos += self.np_random.normal(0, 0.02, 3)
+        delta_vel += self.np_random.normal(0, 0.02, 3)
+
         delta_ori = np.zeros(3)
-        mujoco.mju_subQuat(delta_ori, self.quat, np.array([1.0, 0.0, 0.0, 0.0]))
+        quat = self.quat + self.np_random.normal(0, 0.01, 4)
+        quat = quat / np.linalg.norm(quat)
+        mujoco.mju_subQuat(delta_ori, quat, np.array([1.0, 0.0, 0.0, 0.0]))
 
         delta_angular_vel = np.zeros(3) - self.angular_velocity
+        delta_angular_vel += self.np_random.normal(0, 0.001, 3)
 
         priv_info = self.get_dynamics_info()
 
@@ -212,27 +231,45 @@ class TrajAviaryv3(BaseAviary):
 
     def _compute_reward(self):
 
-        margin = 1.0
+        margin = 0.5
         isclose = 0.001
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
-
-        norm_control = np.linalg.norm((self.action_buffer[1] - self.action_buffer[0]))
+        norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0))
 
         distance_reward = rewards.tolerance(
-            norm_position, bounds=(-isclose, isclose), margin=margin
+            norm_position, bounds=(-isclose, isclose), margin=0.75
+        )
+
+        close_distance_reward = rewards.tolerance(
+            norm_position, bounds=(-isclose, isclose), margin=0.075
         )
 
         velocity_reward = rewards.tolerance(
             norm_velocity, bounds=(-isclose, isclose), margin=margin
         )
 
-        control_reward = rewards.tolerance(
-            norm_control, bounds=(-isclose, isclose), margin=margin
+        action_reward = rewards.tolerance(
+            norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
-        weights = np.array([0.75, 0.2, 0.05])
-        reward_vector = np.array([distance_reward, velocity_reward, control_reward])
+        angular_velocity_reward = rewards.tolerance(
+            np.linalg.norm(self.angular_velocity),
+            bounds=(-isclose, isclose),
+            margin=0.2,
+        )
+
+        weights = np.array([0.55, 0.15, 0.2, 0.05, 0.05])
+        weights = weights / np.sum(weights)
+        reward_vector = np.array(
+            [
+                distance_reward,
+                close_distance_reward,
+                velocity_reward,
+                angular_velocity_reward,
+                action_reward,
+            ]
+        )
         crash_reward = -100.0 if len(self.data.contact.dim) > 0 else 0.0
 
         reward = np.dot(weights, reward_vector) + crash_reward
@@ -288,122 +325,193 @@ class TrajAviaryv3(BaseAviary):
                 self.np_random.uniform(_pos_z[0], _pos_z[1], 1),
             )
         )
-        init_pos[0:3] = self.reference_trajectory[0, 1:4]
-        init_pos[3:7] = self.reference_trajectory[0, 10:14]
+        init_pos[0:3] = self.reference_trajectory[0][1:4] + delta_pos
+
+        _roll_pitch = self.cfg.environment.roll_pitch
+
+        euler = np.concatenate(
+            [self.np_random.uniform(_roll_pitch[0], _roll_pitch[1], 2), [0.0]]
+        )
+        mat = rotation.euler2mat(euler).reshape(9)
+        mujoco.mju_mat2Quat(init_pos[3:7], mat)
+
+        self.data.qpos = init_pos
 
         _lin_vel = self.cfg.environment.linear_vel
         _ang_vel = self.cfg.environment.angular_vel
 
-        self.data.qpos = init_pos
+        delta_vel = self.np_random.uniform(_lin_vel[0], _lin_vel[1], 3)
+
         self.data.qvel = np.concatenate(
             [
-                self.reference_trajectory[0, 4:7],
-                self.reference_trajectory[0, 14:17],
+                self.reference_trajectory[0][4:7] + delta_vel,
+                self.np_random.uniform(_ang_vel[0], _ang_vel[1], 3),
             ]
         )
-        qacc_warmstart = np.zeros(6)
-        qacc_warmstart[0:3] = self.reference_trajectory[0, 7:10]
-        qacc_warmstart[3:6] = self.reference_trajectory[0, 17:20]
-        self.data.qacc_warmstart = qacc_warmstart
 
-    def _dynamics_reset(self):
+    def _dynamics_reset(self, options: [Union[None, dict]] = None):
         """
         Resets the dynamics properties of the drone. Uses the scaling laws to
         reset the properties.
         """
 
-        # arm length
-        _arm_length = self.cfg.scale.scale_lengths
-        self.arm_length = self.np_random.uniform(_arm_length[0], _arm_length[1])
-        L = self.arm_length
+        if options is None:
+            # arm length
+            _arm_length = self.cfg.scale.scale_lengths
+            self.arm_length = self.np_random.uniform(_arm_length[0], _arm_length[1])
+            L = self.arm_length
 
-        # mass
-        _mass_avg = np.polyval(self.cfg.scale.avg_mass_fit, L)
-        _mass_std = np.polyval(self.cfg.scale.std_mass_fit, L)
-        _mass_std = 0.0 if _mass_std < 0.0 else _mass_std
+            # mass
+            _mass_avg = np.polyval(self.cfg.scale.avg_mass_fit, L)
+            _mass_std = np.polyval(self.cfg.scale.std_mass_fit, L)
+            _mass_std = 0.0 if _mass_std < 0.0 else _mass_std
 
-        _mass = self.np_random.uniform(_mass_avg - _mass_std, _mass_avg + _mass_std)
-        self.model.body_mass[self.drone_id] = _mass
+            _mass = self.np_random.uniform(_mass_avg - _mass_std, _mass_avg + _mass_std)
+            self.model.body_mass[self.drone_id] = _mass
 
-        self.HOVER_THRUST = _mass * -1 * self.model.opt.gravity[2]
+            self.HOVER_THRUST = _mass * -1 * self.model.opt.gravity[2]
 
-        # ixx
-        _ixx_avg = np.polyval(self.cfg.scale.avg_ixx_fit, L)
-        _ixx_std = np.polyval(self.cfg.scale.std_ixx_fit, L)
-        _ixx_std = 0.0 if _ixx_std < 0.0 else _ixx_std
+            # ixx
+            _ixx_avg = np.polyval(self.cfg.scale.avg_ixx_fit, L)
+            _ixx_std = np.polyval(self.cfg.scale.std_ixx_fit, L)
+            _ixx_std = 0.0 if _ixx_std < 0.0 else _ixx_std
 
-        _ixx = self.np_random.uniform(_ixx_avg - _ixx_std, _ixx_avg + _ixx_std)
+            _ixx = self.np_random.uniform(_ixx_avg - _ixx_std, _ixx_avg + _ixx_std)
 
-        # iyy
-        _iyy_avg = np.polyval(self.cfg.scale.avg_iyy_fit, L)
-        _iyy_std = np.polyval(self.cfg.scale.std_iyy_fit, L)
-        _iyy_std = 0.0 if _iyy_std < 0.0 else _iyy_std
+            # iyy
+            _iyy_avg = np.polyval(self.cfg.scale.avg_iyy_fit, L)
+            _iyy_std = np.polyval(self.cfg.scale.std_iyy_fit, L)
+            _iyy_std = 0.0 if _iyy_std < 0.0 else _iyy_std
 
-        _iyy = self.np_random.uniform(_iyy_avg - _iyy_std, _iyy_avg + _iyy_std)
+            _iyy = self.np_random.uniform(_iyy_avg - _iyy_std, _iyy_avg + _iyy_std)
 
-        # izz
-        _izz_avg = np.polyval(self.cfg.scale.avg_izz_fit, L)
-        _izz_std = np.polyval(self.cfg.scale.std_izz_fit, L)
-        _izz_std = 0.0 if _izz_std < 0.0 else _izz_std
+            # izz
+            _izz_avg = np.polyval(self.cfg.scale.avg_izz_fit, L)
+            _izz_std = np.polyval(self.cfg.scale.std_izz_fit, L)
+            _izz_std = 0.0 if _izz_std < 0.0 else _izz_std
 
-        _izz = self.np_random.uniform(_izz_avg - _izz_std, _izz_avg + _izz_std)
+            _izz = self.np_random.uniform(_izz_avg - _izz_std, _izz_avg + _izz_std)
 
-        inertia = np.array([_ixx, _iyy, _izz]).reshape(3)
-        self.model.body_inertia[self.drone_id] = inertia
+            inertia = np.array([_ixx, _iyy, _izz]).reshape(3)
+            self.model.body_inertia[self.drone_id] = inertia
 
-        # com offset 5% of the arm length in xy and 2.5% in z
-        com_offset = 0.05 * L
-        com_xy = self.np_random.uniform(-com_offset, com_offset, 2)
-        com_offset = 0.025 * L
-        com_z = self.np_random.uniform(-com_offset, com_offset, 1)
+            # com offset 5% of the arm length in xy and 2.5% in z
+            com_offset = 0.05 * L
+            com_xy = self.np_random.uniform(-com_offset, com_offset, 2)
+            com_offset = 0.025 * L
+            com_z = self.np_random.uniform(-com_offset, com_offset, 1)
 
-        com = np.hstack((com_xy, com_z))
-        self.model.body_ipos = com  # drone com
-        self.model.site_pos[self.com_site_id] = com  # thrust com
+            com = np.hstack((com_xy, com_z))
+            self.model.body_ipos = com  # drone com
 
-        # km_kf
-        _km_kf_avg = np.polyval(self.cfg.scale.avg_km_kf_fit, L)
-        _km_kf_std = np.polyval(self.cfg.scale.std_km_kf_fit, L)
-        _km_kf_std = 0.0 if _km_kf_std < 0.0 else _km_kf_std
+            # thrust offset 5% of the arm length in xy and 2.5% in z
+            thrust_offset = 0.05 * L
+            thrust_xy = self.np_random.uniform(-thrust_offset, thrust_offset, 2)
+            thrust_offset = 0.025 * L
+            thrust_z = self.np_random.uniform(-thrust_offset, thrust_offset, 1)
 
-        _km_kf = self.np_random.uniform(
-            _km_kf_avg - _km_kf_std, _km_kf_avg + _km_kf_std
-        )
-        self.prop_const = _km_kf
+            thrust = np.hstack((thrust_xy, thrust_z))
+            self.model.site_pos[self.com_site_id] = thrust  # thrust site
+
+            # km_kf
+            _km_kf_avg = np.abs(
+                np.polyval(self.cfg.scale.avg_km_kf_fit, self.arm_length)
+            )
+            _km_kf_std = np.polyval(self.cfg.scale.std_km_kf_fit, self.arm_length)
+            _km_kf_std = 0.0 if _km_kf_std < 0.0 else _km_kf_std
+
+            while _km_kf_avg - _km_kf_std < 5e-4:
+                _km_kf_std *= 0.9
+
+            _km_kf = self.np_random.uniform(
+                _km_kf_avg - _km_kf_std, _km_kf_avg + _km_kf_std
+            )
+            self.prop_const = _km_kf
+
+        else:
+            dynamics = CustomDynamics(**options)
+            L = dynamics.arm_length
+
+            self.model.body_mass[self.drone_id] = dynamics.mass
+            self.HOVER_THRUST = dynamics.mass * -1 * self.model.opt.gravity[2]
+
+            inertia = np.array([dynamics.ixx, dynamics.iyy, dynamics.izz]).reshape(3)
+            self.model.body_inertia[self.drone_id] = inertia
+
+            com_offset = 0.05 * L
+            com_xy = self.np_random.uniform(-com_offset, com_offset, 2)
+            com_offset = 0.025 * L
+            com_z = self.np_random.uniform(-com_offset, com_offset, 1)
+
+            com = np.hstack((com_xy, com_z))
+            self.model.body_ipos = com  # drone com
+
+            thrust_offset = 0.05 * L
+            thrust_xy = self.np_random.uniform(-thrust_offset, thrust_offset, 2)
+            thrust_offset = 0.025 * L
+            thrust_z = self.np_random.uniform(-thrust_offset, thrust_offset, 1)
+
+            thrust = np.hstack((thrust_xy, thrust_z))
+            self.model.site_pos[self.com_site_id] = thrust
+
+            self.prop_const = dynamics.km_kf
 
         self.thrust2weight = 2.75
 
-        # TODO: add wind.
+        mujoco.mj_setConst(self.model, self.data)
 
-    def eval_trajectory(self, duration: int):
+        # TODO: add wind.
+        wind_magnitude = self.np_random.uniform(
+            self.cfg.environment.wind_speed[0], self.cfg.environment.wind_speed[1]
+        )
+        wind_direction = self.np_random.uniform(-1, 1, 3)
+        wind_direction = wind_direction / np.linalg.norm(wind_direction)
+        self.model.opt.wind = wind_magnitude * wind_direction
+
+    def eval_trajectory(self, idx=None, trajectory=None):
         """Evaluation method that will be called by the eval script to
         generate the trajectory for the evaluation.
         Assumes that eval is set by the config file
 
         Args:
-        durattion: int: The duration of the evaluation in seconds. Duration is ignored in
-        this environment.
+        idx: int: The index of the trajectory to be evaluated. If None, a trajectory is
+        sampled randomly from the evaluation dataset.
         """
+        if trajectory is None:
+            eval_trajs = np.load(self.eval_trajectory_path)
 
-        eval_trajs = np.load(self.eval_trajectory_path)
+            idx = (
+                self.np_random.integers(0, eval_trajs.shape[0]) if idx is None else idx
+            )
+            eval_traj = eval_trajs[idx]
+            # print("eval traj", eval_traj.shape)
+            rows_not_nan = sum(~np.isnan(eval_traj[:, 1]))
+            self.reference_trajectory = eval_traj[:rows_not_nan]
 
-        idx = self.np_random.integers(0, eval_trajs.shape[0])
-        eval_traj = eval_trajs[idx]
+            self._kinematics_reset()
+            duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
 
-        rows_not_nan = sum(~np.isnan(eval_traj[:, 0]))
-        self.reference_trajectory = eval_traj[:rows_not_nan]
+            t = np.linspace(0, duration / self.mj_freq, duration)
 
-        print("eval traj", self.reference_trajectory.shape)
+            reference_position = eval_traj[:duration, 1:4]
+            reference_velocity = eval_traj[:duration, 4:7]
 
-        self._kinematics_reset()
-        duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
+            return t, reference_position, reference_velocity
 
-        t = np.linspace(0, duration / self.mj_freq, duration)
+        else:
+            t, pos, vel = trajectory
+            self.reference_trajectory = np.concatenate([t.reshape(-1, 1), pos, vel], 1)
 
-        reference_position = eval_traj[:duration, 1:4]
-        reference_velocity = eval_traj[:duration, 4:7]
+            self.data.qpos = np.concatenate([pos[0], np.array([1, 0, 0, 0])])
+            self.data.qvel = np.concatenate([vel[0], np.zeros(3)])
 
-        return t, reference_position, reference_velocity
+            duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
+            t = np.linspace(0, duration / self.mj_freq, duration)
+
+            reference_position = pos[:duration, :]
+            reference_velocity = vel[:duration, :]
+
+            return t, reference_position, reference_velocity
 
     def housekeeping(self):
         """
@@ -425,6 +533,8 @@ class TrajAviaryv3(BaseAviary):
 
         super().init_render()
         self._trace_ref_positions = collections.deque(maxlen=50)
+        self._wind_arrow = -1
+        self._wind_force_arrow = -1
 
     def render_frame(self):
         """
@@ -438,6 +548,24 @@ class TrajAviaryv3(BaseAviary):
             visuals.modify_scene(
                 self.renderer.scene, self._trace_positions, self._trace_ref_positions
             )
+            self._wind_arrow = visuals.render_vector(
+                scene=self.renderer.scene,
+                vector=self.model.opt.wind,
+                pos=self.position + np.array([0, 0, 0.05]),
+                scale=0.5,
+                color=np.array([0, 1, 0, 1]),
+                # geom_id=self._wind_arrow,
+            )
+
+            self._wind_force_arrow = visuals.render_vector(
+                scene=self.renderer.scene,
+                vector=self.data.qfrc_passive[:3],
+                pos=self.position + np.array([0, 0, 0.05]),
+                scale=0.5,
+                color=np.array([0, 0, 1, 1]),
+                # geom_id=self._wind_force_arrow,
+            )
+
             frame = self.renderer.render()
             self._frames.append(frame)
 

@@ -118,9 +118,9 @@ class TrajAviaryv2(BaseAviary):
         # dynamics reset
         self._dynamics_reset()
 
+        self.housekeeping()
         self.set_max_force_torque_limits()
 
-        self.housekeeping()
         self.update_kinematic_data()
 
         initial_obs = self._compute_obs()
@@ -135,7 +135,7 @@ class TrajAviaryv2(BaseAviary):
         obs, reward, terminated, truncated, info = super().step(action)
         self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
-        return obs, reward, terminated, truncated, info
+        return obs, reward, truncated, False, info
 
     def _compute_obs(self):
         """
@@ -225,7 +225,7 @@ class TrajAviaryv2(BaseAviary):
         ]
 
         distance_reward = rewards.tolerance(
-            norm_position, bounds=(-isclose, isclose), margin=margin
+            norm_position, bounds=(-isclose, isclose), margin=0.75
         )
 
         velocity_reward = rewards.tolerance(
@@ -245,7 +245,7 @@ class TrajAviaryv2(BaseAviary):
             norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
-        weights = np.array([0.5, 0.5, 0.2, 0.2, 0.2, 0.2])
+        weights = np.array([0.75, 0.2, 0.0, 0.0, 0.0, 0.05])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
@@ -312,7 +312,7 @@ class TrajAviaryv2(BaseAviary):
                 self.np_random.uniform(_pos_z[0], _pos_z[1], 1),
             )
         )
-        init_pos[0:3] = self.reference_trajectory[0][1:4]
+        init_pos[0:3] = self.reference_trajectory[0][1:4] + delta_pos
 
         _roll_pitch = self.cfg.environment.roll_pitch
 
@@ -327,9 +327,11 @@ class TrajAviaryv2(BaseAviary):
         _lin_vel = self.cfg.environment.linear_vel
         _ang_vel = self.cfg.environment.angular_vel
 
+        delta_vel = self.np_random.uniform(_lin_vel[0], _lin_vel[1], 3)
+
         self.data.qvel = np.concatenate(
             [
-                self.reference_trajectory[0][4:7],
+                self.reference_trajectory[0][4:7] + delta_vel,
                 self.np_random.uniform(_ang_vel[0], _ang_vel[1], 3),
             ]
         )
@@ -401,6 +403,8 @@ class TrajAviaryv2(BaseAviary):
 
         self.thrust2weight = 2.75
 
+        mujoco.mj_setConst(self.model, self.data)
+
         # TODO: add wind.
 
     def eval_trajectory(self, duration: int):
@@ -417,7 +421,7 @@ class TrajAviaryv2(BaseAviary):
 
         idx = self.np_random.integers(0, eval_trajs.shape[0])
         eval_traj = eval_trajs[idx]
-        print("eval traj", eval_traj.shape)
+        # print("eval traj", eval_traj.shape)
         self.reference_trajectory = eval_traj
         self._kinematics_reset()
         duration = eval_traj.shape[0] - (self.trajectory_window + 1)

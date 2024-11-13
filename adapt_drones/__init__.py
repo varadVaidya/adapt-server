@@ -49,3 +49,23 @@ register(
         "ctrl_freq": 100,
     },
 )
+
+register(
+    id="traj_v3_ctbr",
+    entry_point="adapt_drones.envs:TrajAviaryv3CTBR",
+    max_episode_steps=600,
+    kwargs={
+        "mj_freq": 100,
+        "ctrl_freq": 100,
+    },
+)
+
+register(
+    id="traj_pay_v3",
+    entry_point="adapt_drones.envs:TrajAviaryPayv3",
+    max_episode_steps=600,
+    kwargs={
+        "mj_freq": 100,
+        "ctrl_freq": 100,
+    },
+)

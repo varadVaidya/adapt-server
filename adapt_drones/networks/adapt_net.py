@@ -58,8 +58,15 @@ def adapt_train_datt_rma(cfg: Config, envs, best_model: bool = True):
     torch.backends.cudnn.deterministic = cfg.learning.torch_deterministic
 
     # loading the model from the run of the cfg file given
-    run_folder = "runs/" + cfg.grp_name + "/" + cfg.run_name + "/"
-
+    run_folder = (
+        "runs/"
+        + cfg.experiment.wandb_project_name
+        + "/"
+        + cfg.grp_name
+        + "/"
+        + cfg.run_name
+        + "/"
+    )
     results_folder = run_folder + "results/"
     datadump_folder = results_folder + "datadump/"
     os.makedirs(results_folder, exist_ok=True)
@@ -99,7 +106,7 @@ def adapt_train_datt_rma(cfg: Config, envs, best_model: bool = True):
         action_shape=action_shape,
     ).to(device)
 
-    agent.load_state_dict(torch.load(model_path))
+    agent.load_state_dict(torch.load(model_path, weights_only=True))
     agent.eval()
 
     # init the adaptation network

@@ -23,12 +23,20 @@ check_git_clean()
 class Args:
     env_id: str
     scale: bool = True
+    wind_bool: bool = True
     seed: int = 15092024
     agent: str = "RMA_DATT"
 
 
 args = tyro.cli(Args)
-cfg = Config(env_id=args.env_id, seed=args.seed, scale=args.scale, agent=args.agent)
+cfg = Config(
+    env_id=args.env_id,
+    seed=args.seed,
+    scale=args.scale,
+    agent=args.agent,
+    wind_bool=args.wind_bool,
+    learning=Learning(total_timesteps=30_000_000),
+)
 
 # set random seeds
 random.seed(cfg.seed)
@@ -97,6 +105,15 @@ envs = gym.vector.SyncVectorEnv(
 )
 adapt_train_datt_rma(adapt_cfg, envs)
 
-with open("runs/" + cfg.grp_name + "/" + cfg.run_name + "/config.yaml", "w") as f:
+with open(
+    "runs/"
+    + cfg.experiment.wandb_project_name
+    + "/"
+    + cfg.grp_name
+    + "/"
+    + cfg.run_name
+    + "/config.yaml",
+    "w",
+) as f:
     yaml.dump(asdict(cfg), f)
     f.close()

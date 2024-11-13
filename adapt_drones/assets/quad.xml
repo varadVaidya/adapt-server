@@ -1,6 +1,6 @@
 <mujoco model="Generic Quad">
   <compiler autolimits="false"/>
-  <option integrator="RK4"/>
+  <option integrator="RK4" density="1.2" viscosity="0.00002"/>
   <visual>
     <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
     <global azimuth="-20" elevation="-20" offwidth="1920" offheight="1080"/>
@@ -16,7 +16,7 @@
   <worldbody>
     <light pos="0 0 20" dir="0 0 -1" directional="false"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
-    <body name="quad" pos="0 0 0.01" quat="1 0 0 0">
+    <body name="quad" pos="0 0 0.1" quat="1 0 0 0">
       <inertial mass="0.792" diaginertia="0.0047 0.005 0.0074" pos="0 0 0"/>
       <joint name="root" type="free" damping="0" armature="0" pos="0 0 0" limited="false"/>
 
@@ -30,12 +30,12 @@
       <geom name="arm_back_left" type="box" pos="-.07 .07 0" size=".05 .005 .005" quat=".924 0 0 -.383"
         rgba=".3 .3 .8 1"/>
 
-      <site name="motor_front_left" type="cylinder" pos=".1 .1 .0075" size=".01 .0025" quat="1 0 0 0" rgba=".3 .8 .3 1"/>
+      <!-- <site name="motor_front_left" type="cylinder" pos=".1 .1 .0075" size=".01 .0025" quat="1 0 0 0" rgba=".3 .8 .3 1"/>
       <site name="motor_front_right" type="cylinder" pos=".1 -.1 .0075" size=".01 .0025" quat="1 0 0 0"
         rgba=".3 .8 .3 1"/>
       <site name="motor_back_right" type="cylinder" pos="-.1 -.1 .0075" size=".01 .0025" quat="1 0 0 0"
         rgba=".3 .8 .3 1"/>
-      <site name="motor_back_left" type="cylinder" pos="-.1  .1 .0075" size=".01 .0025" quat="1 0 0 0" rgba=".3 .8 .3 1"/>
+      <site name="motor_back_left" type="cylinder" pos="-.1  .1 .0075" size=".01 .0025" quat="1 0 0 0" rgba=".3 .8 .3 1"/> -->
       <site name="thrust_com" type="cylinder" pos="0 0 0" quat="1 0 0 0"/>
       <site name="imu" pos="0 0 .02"/>
 

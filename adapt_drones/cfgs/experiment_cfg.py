@@ -10,4 +10,4 @@ class Experiment:
     track: bool = False  # track the experiment in wandb
     grp_name: str = "default"
     run_name: str = "default"
-    wandb_project_name: str = "adapt-test"
+    wandb_project_name: str = "adapt-ICRA"

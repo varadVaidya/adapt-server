@@ -1,6 +1,6 @@
 <mujoco model="Generic Quad">
     <compiler autolimits="false"/>
-    <option integrator="RK4"/>
+    <option integrator="implicitfast"/>
     <visual>
         <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
         <global azimuth="-20" elevation="-20" offwidth="1920" offheight="1080"/>
@@ -16,7 +16,7 @@
     <worldbody>
         <light pos="0 0 20" dir="0 0 -1" directional="false"/>
         <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
-        <body name="quad" pos="0 0 0.01" quat="1 0 0 0">
+        <body name="quad" pos="0 0 0.1" quat="1 0 0 0">
             <inertial mass="0.792" diaginertia="0.0047 0.005 0.0074" pos="0 0 0"/>
             <joint name="root" type="free" damping="0" armature="0" pos="0 0 0" limited="false"/>
 
@@ -65,7 +65,7 @@
     </worldbody>
 
     <actuator>
-        <velocity gear="0 0 1 0 0 0" site="thrust_com" name="body_thrust"/>
+        <motor gear="0 0 1 0 0 0" site="thrust_com" name="body_thrust"/>
         <velocity gear="0 0 0 -1 0 0" site="thrust_com" name="x_moment"/>
         <velocity gear="0 0 0 0 -1 0" site="thrust_com" name="y_moment"/>
         <velocity gear="0 0 0 0 0 -1" site="thrust_com" name="z_moment"/>

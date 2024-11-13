@@ -135,7 +135,7 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
         obs, reward, terminated, truncated, info = super().step(action)
         self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
 
-        return obs, reward, terminated, truncated, info
+        return obs, reward, truncated, False, info
 
     def _compute_obs(self):
         """
@@ -244,7 +244,7 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
             norm_action, bounds=(-isclose, isclose), margin=0.1
         )
 
-        weights = np.array([0.5, 0.5, 0.2, 0.2, 0.2, 0.2])
+        weights = np.array([0.5, 0.5, 0.1, 0.1, 0.1, 0.2])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
@@ -400,6 +400,8 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
 
         self.thrust2weight = 2.75
 
+        mujoco.mj_setConst(self.model, self.data)
+
         # TODO: add wind.
 
     def eval_trajectory(self, duration: int):
@@ -416,7 +418,7 @@ class TrajAviaryv2CTBR(BaseAviaryCTBR):
 
         idx = self.np_random.integers(0, eval_trajs.shape[0])
         eval_traj = eval_trajs[idx]
-        print("eval traj", eval_traj.shape)
+        # print("eval traj", eval_traj.shape)
         self.reference_trajectory = eval_traj
         self._kinematics_reset()
         duration = eval_traj.shape[0] - (self.trajectory_window + 1)
