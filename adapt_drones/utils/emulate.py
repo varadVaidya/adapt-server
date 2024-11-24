@@ -82,6 +82,13 @@ def q_integrate(q, v, dt):
     return q_mult(q_exp(vec_to_quat(v * dt / 2)), q)
 
 
+def q_integrate2(q, v, dt):
+    """
+    Integrate a quaternion for a timestep dt given angular velocity v
+    """
+    return q_mult(q_exp(vec_to_quat(v * dt / 2)), q)
+
+
 class State:
     """Class that stores the state of a UAV as used in the simulator interface."""
 
@@ -161,14 +168,6 @@ class Quadrotor:
         f_u = np.array([0, 0, u[0]])
         tau_u = -u[1:]
 
-        vel_next = (
-            self.state.vel + (self.g + rotate(self.state.quat, f_u) / self.mass) * dt
-        )
-        self.state.vel = vel_next
-
-        pos_next = self.state.pos + self.state.vel * dt
-        self.state.pos = pos_next
-
         omega_next = (
             self.state.omega
             + self.inv_J
@@ -182,9 +181,22 @@ class Quadrotor:
         q_next = normalise_quat(q_next)
         self.state.quat = q_next
 
-    def f_pos(self, state):
-        return state.vel
+        x_current = np.concatenate([self.state.pos, self.state.vel])
 
-    def f_vel(self, state, u):
+        # implement the state update using RK4
+        k1 = self.f_state(x_current, self.state.quat, u)
+        k2 = self.f_state(x_current + k1 * dt / 2, self.state.quat, u)
+        k3 = self.f_state(x_current + k2 * dt / 2, self.state.quat, u)
+        k4 = self.f_state(x_current + k3 * dt, self.state.quat, u)
+
+        x_next = x_current + (k1 + 2 * k2 + 2 * k3 + k4) * dt / 6
+
+        self.state.pos = x_next[:3]
+        self.state.vel = x_next[3:]
+
+    def f_state(self, x, quat, u):
+        # returns the state derivative
         f_u = np.array([0, 0, u[0]])
-        return self.g + rotate(state.quat, f_u / self.mass)
+        f_pos = x[3:]
+        f_vel = self.g + rotate(quat, f_u / self.mass)
+        return np.concatenate([f_pos, f_vel])
