@@ -489,6 +489,7 @@ class TrajAviaryv3(BaseAviary):
             self.reference_trajectory = eval_traj[:rows_not_nan]
 
             self._kinematics_reset()
+            self.update_kinematic_data()
             duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
 
             t = np.linspace(0, duration / self.mj_freq, duration)
@@ -504,6 +505,8 @@ class TrajAviaryv3(BaseAviary):
 
             self.data.qpos = np.concatenate([pos[0], np.array([1, 0, 0, 0])])
             self.data.qvel = np.concatenate([vel[0], np.zeros(3)])
+
+            self.update_kinematic_data()
 
             duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
             t = np.linspace(0, duration / self.mj_freq, duration)
