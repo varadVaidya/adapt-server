@@ -3,18 +3,21 @@ import random
 import subprocess
 from dataclasses import dataclass, asdict
 from typing import Union
+import pkg_resources
 
 os.environ["MUJOCO_GL"] = "egl"
 
 import numpy as np
 import torch
 import gymnasium as gym
+import matplotlib.pyplot as plt
 
 
 from adapt_drones.cfgs.config import *
 from adapt_drones.networks.agents import *
 from adapt_drones.networks.adapt_net import AdaptationNetwork
 from adapt_drones.utils.emulate import *
+from adapt_drones.utils.mpc_utils import quaternion_to_euler
 from adapt_drones.utils.dynamics import CustomDynamics
 
 
@@ -29,8 +32,78 @@ class Args:
     wind_bool: bool = False
 
 
-if __name__ == "__main__":
+def compute_obs(cf_quad: Quadrotor):
+    # calculate the state observation
+    trajectory_window = cf_quad.get_trajectory_window()
+    # print(trajectory_window.shape)
+    assert trajectory_window.shape == (cf_quad.trajectory_window_length, 6)
 
+    window_position = trajectory_window[:, 0:3] - cf_quad.state.pos
+    window_velocity = trajectory_window[:, 3:6] - cf_quad.state.vel
+
+    target_pos = trajectory_window[0, 0:3]
+    target_vel = trajectory_window[0, 3:6]
+
+    delta_pos = target_pos - cf_quad.state.pos
+    delta_vel = target_vel - cf_quad.state.vel
+
+    delta_ori = sub_quat(cf_quad.state.quat, np.array([1, 0, 0, 0]))
+    delta_angular_vel = -cf_quad.state.omega
+
+    state_obs = np.concatenate((delta_pos, delta_ori, delta_ori, delta_angular_vel))
+
+    window_trajectory = np.concatenate(
+        (window_position, window_velocity), axis=1
+    ).flatten()
+
+    priv_info = np.concatenate(
+        (
+            [cf_quad.mass],  # mass
+            cf_quad.J,  # inertia
+            [2.75],  # thrust to weight ratio
+            [cf_quad.prop_const],  # propeller constant
+            [cf_quad.arm_length],  # arm length
+            np.array([0, 0, 0]),  # wind
+        )
+    )
+
+    return np.concatenate((priv_info, state_obs, window_trajectory)).astype(np.float32)
+
+
+def reset(cf_state: State, cf_quad: Quadrotor):
+    pass
+
+
+def eval_trajectory(
+    path: str,
+    idx: Union[int, None],
+    emulate_freq: int,
+    trajectory_window_length: int,
+    trajectory: Union[np.ndarray, None] = None,
+):
+    if trajectory is None:
+        eval_trajs = np.load(path)
+
+        eval_traj = eval_trajs[idx]
+        rows_not_nan = sum(~np.isnan(eval_traj[:, 1]))
+
+        eval_traj = eval_traj[:rows_not_nan]
+
+        ref_position = eval_traj[:, 1:4]
+        ref_velocity = eval_traj[:, 8:11]
+
+        duration = eval_traj.shape[0] - (trajectory_window_length + 1)
+        t = np.linspace(0, duration / emulate_freq, duration)
+        # ref_position = eval_traj[:duration, 1:4]
+        # ref_velocity = eval_traj[:duration, 8:11]
+
+        return t, np.concatenate((ref_position, ref_velocity), axis=1)
+
+    else:
+        raise NotImplementedError
+
+
+if __name__ == "__main__":
     args = Args()
     cfg = Config(
         env_id=args.env_id,
@@ -41,33 +114,21 @@ if __name__ == "__main__":
         scale=args.scale,
         wind_bool=args.wind_bool,
     )
-
     print("=================================")
     print("CF Emulation")
 
-    # set the dynamics of crazyflie to both the emulation dynamics
-    # and env dynamics
-
-    dynamics = CustomDynamics(
-        mass=0.792,
-        arm_length=0.16,
-        ixx=0.0047,
-        iyy=0.005,
-        izz=0.0074,
-        km_kf=0.006,
-    )
     cf_state = State()
     cf_quad = Quadrotor(state=cf_state)
 
     best_model = True
-    idx = 0
-    # seeding again for sanity
-    random.seed(cfg.seed)
-    np.random.seed(cfg.seed)
-    torch.manual_seed(cfg.seed)
-    torch.backends.cudnn.deterministic = cfg.learning.torch_deterministic
+    idx = 11
 
-    rng = np.random.default_rng(seed=cfg.seed)
+    # seeding
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.backends.cudnn.deterministic = True
+    rng = np.random.default_rng(args.seed)
 
     # load the model
     run_folder = (
@@ -91,14 +152,23 @@ if __name__ == "__main__":
         "cuda" if torch.cuda.is_available() and cfg.learning.cuda else "cpu"
     )
 
-    env = gym.make(cfg.env_id, cfg=cfg, record=True)
-    env = gym.wrappers.FlattenObservation(env)
-    env = gym.wrappers.RecordEpisodeStatistics(env)
-
-    priv_info_shape = env.unwrapped.priv_info_shape
-    state_shape = env.unwrapped.state_obs_shape
-    traj_shape = env.unwrapped.reference_traj_shape
-    action_shape = env.action_space.shape[0]
+    # setup helping variables.
+    # hardcode the values for now. ! TODO: maybe change before final submission
+    priv_info_shape = 10
+    state_shape = 12
+    traj_shape = 600
+    action_shape = 4
+    cf_quad.trajectory_window_length = cfg.environment.trajectory_window
+    trajectory_path = pkg_resources.resource_filename(
+        "adapt_drones", "assets/slow_pi_tcn_eval_mpc.npy"
+    )
+    t, ref_trajectory = eval_trajectory(
+        trajectory_path,
+        idx=idx,
+        emulate_freq=100,
+        trajectory_window_length=cf_quad.trajectory_window_length,
+    )
+    cf_quad.reference_trajectory = ref_trajectory
 
     agent = RMA_DATT(
         priv_info_shape=priv_info_shape,
@@ -111,80 +181,81 @@ if __name__ == "__main__":
     agent.eval()
 
     state_action_shape = state_shape + action_shape
-    time_horizon = cfg.network.adapt_time_horizon
-
+    time_horizon = 50
     adapt_input = time_horizon * state_action_shape
-    adapt_output = cfg.network.env_encoder_output
+    adapt_output = 8
 
     adapt_net = AdaptationNetwork(adapt_input, adapt_output).to(device)
     adapt_net.load_state_dict(torch.load(adapt_path, weights_only=True))
 
     state_action_buffer = torch.zeros(state_action_shape, time_horizon).to(device)
 
-    obs, _ = env.reset(seed=cfg.seed, options=asdict(dynamics))
+    # compute_obs(cf_quad)
+    # cf_quad.step(np.zeros(4), 0.01)
+    # print(cf_quad.state)
 
-    t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(idx=idx)
+    cf_quad.state.pos = ref_trajectory[0, :3]
+    cf_quad.state.vel = ref_trajectory[0, 3:6]
 
-    cf_state.pos = env.unwrapped.position
-    cf_state.vel = env.unwrapped.velocity
-    cf_state.quat = env.unwrapped.quat
-    cf_state.omega = env.unwrapped.angular_velocity
+    print("Length of t:", len(t))
 
-    position, velocity = [], []
-    cf_position, cf_velocity = [], []
+    cf_position = []
+    cf_velocity = []
+    cf_quaternion = []
 
     for i in range(len(t)):
-        # print(cf_state)
-        # print(
-        #     env.unwrapped.position,
-        #     env.unwrapped.velocity,
-        #     env.unwrapped.quat,
-        #     env.unwrapped.angular_velocity,
-        # )
-        # print("Time:", i / 100)
-        # print("Position:", env.unwrapped.position, cf_state.pos)
-        # print("Velocity:", env.unwrapped.velocity, cf_state.vel)
-        # print("Quat:", env.unwrapped.quat, cf_state.quat)
-        # print("Angular Velocity:", env.unwrapped.angular_velocity, cf_state.omega)
-        env.unwrapped.target_position = ref_positon[i]
-        env.unwrapped.target_velocity = ref_velocity[i]
-
-        env_obs = obs[: env.unwrapped.priv_info_shape]
-        state_obs = obs[
-            env.unwrapped.priv_info_shape : env.unwrapped.priv_info_shape
-            + env.unwrapped.state_obs_shape
-        ]
-        traj_obs = obs[env.unwrapped.priv_info_shape + env.unwrapped.state_obs_shape :]
+        obs = compute_obs(cf_quad)
+        # cf_quad.step(np.zeros(4), 0.01)
+        # obs = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
+        # print(obs.shape)
         action = agent.get_action_and_value(
             torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
         )[0]
-        obs = env.step(action.cpu().numpy()[0])[0]
-        # print("NN Action:", env.unwrapped.last_force_torque_action)
-        cf_quad.step(
-            env.unwrapped.last_force_torque_action,
-            env.unwrapped.mj_timestep,
-        )
-
-        position.append(env.unwrapped.position)
-        velocity.append(env.unwrapped.velocity)
-        cf_position.append(cf_quad.state.pos)
-        cf_velocity.append(cf_quad.state.vel)
+        action = action.cpu().detach().numpy()[0]
+        # print(action)
+        cf_quad.step(action, 0.01)
+        # print(cf_quad.state.pos)
+        cf_position.append(cf_quad.state.pos.copy())
+        cf_velocity.append(cf_quad.state.vel.copy())
+        cf_quaternion.append(cf_quad.state.quat.copy())
+        # print(cf_quad.step_counter)
+        # print(cf_quad.state)
         # input()
 
-    position = np.array(position)
-    velocity = np.array(velocity)
     cf_position = np.array(cf_position)
     cf_velocity = np.array(cf_velocity)
+    cf_quaternion = np.array(cf_quaternion)
 
-    assert len(t) == len(position), "Length of t and position are not same"
-    pos_error = ref_positon - position
-    mean_error = np.mean(np.linalg.norm(pos_error, axis=1))
-    rms_error = np.sqrt(np.mean(np.linalg.norm(pos_error, axis=1) ** 2))
-    print("Mean Error NN:", mean_error)
-    print("RMS Error NN:", rms_error)
+    cf_rpy = [rpy for rpy in map(quaternion_to_euler, cf_quaternion)]
+    cf_rpy = np.array(cf_rpy)
 
-    pos_error = ref_positon - cf_position
+    pos_error = ref_trajectory[: len(t), :3] - cf_position
+    vel_error = ref_trajectory[: len(t), 3:6] - cf_velocity
+
     mean_error = np.mean(np.linalg.norm(pos_error, axis=1))
-    rms_error = np.sqrt(np.mean(np.linalg.norm(pos_error, axis=1) ** 2))
-    print("Mean Error CF:", mean_error)
-    print("RMS Error CF:", rms_error)
+    print("Mean Position Error:", mean_error)
+    mean_vel_error = np.mean(np.linalg.norm(vel_error, axis=1))
+    print("Mean Velocity Error:", mean_vel_error)
+
+    print("Max Roll Angle:", np.rad2deg(np.max(cf_rpy[:, 0])))
+    print("Max Pitch Angle:", np.rad2deg(np.max(cf_rpy[:, 1])))
+
+    plt.figure()
+    plt.plot(t, cf_position[:, 0], "r", label="x")
+    plt.plot(t, cf_position[:, 1], "g", label="y")
+    plt.plot(t, cf_position[:, 2], "b", label="z")
+
+    plt.plot(t, ref_trajectory[: len(t), 0], "r--", alpha=0.75, label="x_ref")
+    plt.plot(t, ref_trajectory[: len(t), 1], "g--", alpha=0.75, label="y_ref")
+    plt.plot(t, ref_trajectory[: len(t), 2], "b--", alpha=0.75, label="z_ref")
+
+    plt.grid()
+    plt.title("Position")
+    plt.legend()
+    plt.show()
+
+    # question: what all functions do we need to implement?
+    # 1. compute_obs
+    # 2. compute_action or some form of post processing of the normal action
+    # 3. trajectory generation, or loading of some sorts.
+    # 4. reset?? not sure if we need this.

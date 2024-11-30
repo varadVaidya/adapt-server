@@ -55,12 +55,23 @@ def q_exp(q):
 def sub_quat(qa, qb):
     qb = conj_quat(qb)
     qdiff = q_mult(qb, qa)
-    axis = qdiff[1:]
-    sin_a_2 = np.linalg.norm(axis)
-    speed = 2 * np.arctan2(sin_a_2, qdiff[0])
-    speed = speed if speed < np.pi else speed - 2 * np.pi
 
-    return speed * axis
+    return quat_to_vel(qdiff, 1.0)
+
+
+def quat_to_vel(quat, dt):
+
+    axis = quat[1:]
+
+    sin_a_2 = np.linalg.norm(axis)
+    if sin_a_2 > 0:
+        axis /= sin_a_2
+
+    angle = 2 * np.arctan2(sin_a_2, quat[0])
+
+    angle = angle if angle <= np.pi else angle - 2 * np.pi
+
+    return axis * angle / dt
 
 
 def skew_symmetric(v):
@@ -154,17 +165,65 @@ class Quadrotor:
     """
 
     def __init__(self, state: State):
-        self.mass = 0.792
-        self.J = np.array([0.0047, 0.005, 0.0074])
+        self.mass = 0.034
+        self.J = np.array([16.571710e-6, 16.655602e-6, 29.261652e-6])
         self.g = np.array([0, 0, -9.81])
-        self.arm_length = 0.16
-        self.prop_const = 0.014
+        self.arm_length = 0.046
+        self.prop_const = 0.006
+        self.thrust2weight = 2.75
+        self.HOVER_THRUST = self.mass * -self.g[2]
+        self.max_thrust = self.HOVER_THRUST * self.thrust2weight
+        self.max_torque = np.array(
+            [
+                self.max_thrust / 4 * self.arm_length,
+                self.max_thrust / 4 * self.arm_length,
+                2 * self.max_thrust / 4 * self.prop_const,
+            ]
+        )
 
         self.inv_J = 1 / self.J
 
         self.state: State = state
+        self.step_counter = 0
+        self._trajectory_window_length = 0  # initialize the trajectory window
+
+        self._reference_trajectory = None
+
+    @property
+    def reference_trajectory(self):
+        return self._reference_trajectory
+
+    @reference_trajectory.setter
+    def reference_trajectory(self, value):
+        self._reference_trajectory = value
+
+    @property
+    def trajectory_window_length(self):
+        return self._trajectory_window_length
+
+    @trajectory_window_length.setter
+    def trajectory_window_length(self, value):
+        self._trajectory_window_length = value
+
+    def get_trajectory_window(self):
+        return self.reference_trajectory[
+            self.step_counter : self.step_counter + self.trajectory_window_length
+        ]
+
+    def pre_process_action(self, action: np.ndarray) -> np.ndarray:
+
+        force_torque_action = np.zeros(4)
+
+        multipler = (self.thrust2weight - 1.0) if action[0] > 0.0 else 1.0
+        normalized_thrust = action[0] * multipler + 1.0
+
+        force_torque_action[0] = normalized_thrust * self.HOVER_THRUST
+        force_torque_action[1:] = action[1:] * self.max_torque
+
+        return force_torque_action
 
     def step(self, u, dt):
+        u = self.pre_process_action(u)
         f_u = np.array([0, 0, u[0]])
         tau_u = -u[1:]
 
@@ -193,6 +252,7 @@ class Quadrotor:
 
         self.state.pos = x_next[:3]
         self.state.vel = x_next[3:]
+        self.step_counter += 1
 
     def f_state(self, x, quat, u):
         # returns the state derivative
