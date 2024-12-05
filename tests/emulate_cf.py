@@ -121,7 +121,7 @@ if __name__ == "__main__":
     cf_quad = Quadrotor(state=cf_state)
 
     best_model = True
-    idx = 11
+    idx = 2
 
     # seeding
     random.seed(args.seed)
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     t, ref_trajectory = eval_trajectory(
         trajectory_path,
         idx=idx,
-        emulate_freq=100,
+        emulate_freq=50,
         trajectory_window_length=cf_quad.trajectory_window_length,
     )
     cf_quad.reference_trajectory = ref_trajectory
@@ -203,17 +203,30 @@ if __name__ == "__main__":
     cf_velocity = []
     cf_quaternion = []
 
+    action = np.zeros(4)
+
     for i in range(len(t)):
         obs = compute_obs(cf_quad)
-        # cf_quad.step(np.zeros(4), 0.01)
-        # obs = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
-        # print(obs.shape)
-        action = agent.get_action_and_value(
-            torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device)
-        )[0]
+        state_action = np.concatenate(
+            (obs[priv_info_shape : priv_info_shape + state_shape], action)
+        )
+
+        state_action = (
+            torch.tensor(state_action, dtype=torch.float32).unsqueeze(-1).to(device)
+        )
+
+        state_action_buffer = torch.cat(
+            (state_action, state_action_buffer[:, :-1].clone()), dim=-1
+        )
+        env_encoder = adapt_net(state_action_buffer.flatten().unsqueeze(0))
+
+        action = agent(
+            torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(device),
+            predicited_enc=env_encoder,
+        )
         action = action.cpu().detach().numpy()[0]
         # print(action)
-        cf_quad.step(action, 0.01)
+        cf_quad.step(action, 0.02)
         # print(cf_quad.state.pos)
         cf_position.append(cf_quad.state.pos.copy())
         cf_velocity.append(cf_quad.state.vel.copy())
