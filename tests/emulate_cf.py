@@ -50,10 +50,10 @@ def compute_obs(cf_quad: Quadrotor):
     delta_ori = sub_quat(cf_quad.state.quat, np.array([1, 0, 0, 0]))
     delta_angular_vel = -cf_quad.state.omega
 
-    state_obs = np.concatenate((delta_pos, delta_ori, delta_ori, delta_angular_vel))
+    state_obs = np.concatenate((delta_pos, delta_ori, delta_vel, delta_angular_vel))
 
-    window_trajectory = np.concatenate(
-        (window_position, window_velocity), axis=1
+    window_trajectory = np.hstack(
+        [window_position, window_velocity]
     ).flatten()
 
     priv_info = np.concatenate(
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     t, ref_trajectory = eval_trajectory(
         trajectory_path,
         idx=idx,
-        emulate_freq=50,
+        emulate_freq=100,
         trajectory_window_length=cf_quad.trajectory_window_length,
     )
     cf_quad.reference_trajectory = ref_trajectory
@@ -226,7 +226,7 @@ if __name__ == "__main__":
         )
         action = action.cpu().detach().numpy()[0]
         # print(action)
-        cf_quad.step(action, 0.02)
+        cf_quad.step(action, 0.01)
         # print(cf_quad.state.pos)
         cf_position.append(cf_quad.state.pos.copy())
         cf_velocity.append(cf_quad.state.vel.copy())

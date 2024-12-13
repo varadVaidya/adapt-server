@@ -206,7 +206,7 @@ class Quadrotor:
         self._trajectory_window_length = value
 
     def get_trajectory_window(self):
-        return self.reference_trajectory[
+        return self.reference_trajectory[ #
             self.step_counter : self.step_counter + self.trajectory_window_length
         ]
 
