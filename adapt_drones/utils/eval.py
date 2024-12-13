@@ -123,7 +123,8 @@ def phase1_eval(
     t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(idx=idx)
     print("Trajectory Length:", len(t))
 
-    position, velocity = [], []
+    position, quaternion, lin_velocity, ang_velocity = [], [], [], []
+    action_numpy = []
 
     for i in range(len(t)):
         env.unwrapped.target_position = ref_positon[i]
@@ -134,13 +135,22 @@ def phase1_eval(
         obs = env.step(action.cpu().numpy()[0])[0]
 
         position.append(env.unwrapped.position)
-        velocity.append(env.unwrapped.velocity)
+        quaternion.append(env.unwrapped.quat)
+        lin_velocity.append(env.unwrapped.velocity)
+        ang_velocity.append(env.unwrapped.angular_velocity)
+        action_numpy.append(action.cpu().numpy()[0])
 
     position = np.array(position)
-    velocity = np.array(velocity)
+    quaternion = np.array(quaternion)
+    lin_velocity = np.array(lin_velocity)
+    ang_velocity = np.array(ang_velocity)
+    action_numpy = np.array(action_numpy)
+    
+    for i in range(len(action_numpy)):
+        action_numpy[i] = env.unwrapped.preprocess_action(action_numpy[i])
 
     datadump = np.hstack(
-        (t.reshape(-1, 1), position, velocity, ref_positon, ref_velocity)
+        (t.reshape(-1, 1), position, lin_velocity, ref_positon, ref_velocity)
     )
     headers = ["p", "v", "pd", "vd"]
     axes = ["x", "y", "z"]
@@ -157,8 +167,11 @@ def phase1_eval(
         t,
         position=position,
         goal_position=ref_positon,
-        velocity=velocity,
+        velocity=lin_velocity,
         goal_velocity=ref_velocity,
+        quaternion=quaternion,
+        angular_velocity=ang_velocity,
+        action=action_numpy,
         plot_text=text_plot,
         save_prefix="phase_1",
         save_path=results_folder,
@@ -271,7 +284,8 @@ def RMA_DATT_eval(
 
     t, ref_positon, ref_velocity = env.unwrapped.eval_trajectory(idx=idx)
 
-    position, velocity = [], []
+    position, quaternion, lin_velocity, ang_velocity = [], [], [], []
+    action_numpy = []
     obs = torch.tensor(obs, dtype=torch.float32).to(device)
     action = torch.zeros(env.action_space.shape[0]).to(device)
 
@@ -300,13 +314,22 @@ def RMA_DATT_eval(
         obs = torch.tensor(obs, dtype=torch.float32).to(device)
 
         position.append(env.unwrapped.position)
-        velocity.append(env.unwrapped.velocity)
+        quaternion.append(env.unwrapped.quat)
+        lin_velocity.append(env.unwrapped.velocity)
+        ang_velocity.append(env.unwrapped.angular_velocity)
+        action_numpy.append(action.cpu().numpy()[0])
 
     position = np.array(position)
-    velocity = np.array(velocity)
+    quaternion = np.array(quaternion)
+    lin_velocity = np.array(lin_velocity)
+    ang_velocity = np.array(ang_velocity)
+    action_numpy = np.array(action_numpy)
+
+    for i in range(len(action_numpy)):
+        action_numpy[i] = env.unwrapped.preprocess_action(action_numpy[i])
 
     datadump = np.hstack(
-        (t.reshape(-1, 1), position, velocity, ref_positon, ref_velocity)
+        (t.reshape(-1, 1), position, lin_velocity, ref_positon, ref_velocity)
     )
     headers = ["p", "v", "pd", "vd"]
     axes = ["x", "y", "z"]
@@ -322,8 +345,11 @@ def RMA_DATT_eval(
         t,
         position=position,
         goal_position=ref_positon,
-        velocity=velocity,
+        velocity=lin_velocity,
         goal_velocity=ref_velocity,
+        quaternion=quaternion,
+        angular_velocity=ang_velocity,
+        action=action_numpy,
         plot_text=text_plot,
         save_prefix="adapt",
         save_path=results_folder,
