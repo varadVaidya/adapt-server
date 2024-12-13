@@ -186,7 +186,7 @@ class TrajAviaryv3(BaseAviary):
         mujoco.mju_subQuat(delta_ori, quat, np.array([1.0, 0.0, 0.0, 0.0]))
 
         delta_angular_vel = np.zeros(3) - self.angular_velocity
-        delta_angular_vel += self.np_random.normal(0, 0.01, 3)
+        delta_angular_vel += self.np_random.normal(0, 0.005, 3)
 
         priv_info = self.get_dynamics_info()
 
