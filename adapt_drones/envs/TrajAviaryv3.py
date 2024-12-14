@@ -52,7 +52,7 @@ class TrajAviaryv3(BaseAviary):
         self.action_space = self._action_space()
         self.observation_space = self._observation_space()
 
-        self.action_buffer = np.zeros((4, 4))
+        self.action_buffer = np.zeros((10, 4))
 
     def _action_space(self):
         lower_bound = -1 * np.ones(4)
@@ -148,7 +148,10 @@ class TrajAviaryv3(BaseAviary):
         action = np.clip(action, -1, 1)
 
         obs, reward, terminated, truncated, info = super().step(action)
-        self.action_buffer = np.concatenate([self.action_buffer[1:], [action]])
+
+        self.action_buffer = np.concatenate(
+            [self.action_buffer[1:], action.reshape(1, -1)]
+        )
 
         return obs, reward, truncated, False, info
 
@@ -183,7 +186,7 @@ class TrajAviaryv3(BaseAviary):
         mujoco.mju_subQuat(delta_ori, quat, np.array([1.0, 0.0, 0.0, 0.0]))
 
         delta_angular_vel = np.zeros(3) - self.angular_velocity
-        delta_angular_vel += self.np_random.normal(0, 0.001, 3)
+        delta_angular_vel += self.np_random.normal(0, 0.005, 3)
 
         priv_info = self.get_dynamics_info()
 
@@ -235,7 +238,7 @@ class TrajAviaryv3(BaseAviary):
         isclose = 0.001
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
-        norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0))
+        norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0)/self.mj_timestep)
 
         distance_reward = rewards.tolerance(
             norm_position, bounds=(-isclose, isclose), margin=0.75
@@ -259,7 +262,7 @@ class TrajAviaryv3(BaseAviary):
             margin=0.2,
         )
 
-        weights = np.array([0.55, 0.15, 0.2, 0.05, 0.05])
+        weights = np.array([0.50, 0.15, 0.15, 0.15, 0.05])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
@@ -300,7 +303,7 @@ class TrajAviaryv3(BaseAviary):
 
     def _compute_info(self):
         self.info_pos_error += np.linalg.norm(self.target_position - self.position)
-        self.info_vel_error += np.linalg.norm(self.velocity)
+        self.info_vel_error += np.linalg.norm(self.target_velocity - self.velocity)
 
         error_dict = {
             "pos_error": self.info_pos_error,
@@ -489,6 +492,7 @@ class TrajAviaryv3(BaseAviary):
             self.reference_trajectory = eval_traj[:rows_not_nan]
 
             self._kinematics_reset()
+            self.update_kinematic_data()
             duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
 
             t = np.linspace(0, duration / self.mj_freq, duration)
@@ -504,6 +508,8 @@ class TrajAviaryv3(BaseAviary):
 
             self.data.qpos = np.concatenate([pos[0], np.array([1, 0, 0, 0])])
             self.data.qvel = np.concatenate([vel[0], np.zeros(3)])
+
+            self.update_kinematic_data()
 
             duration = self.reference_trajectory.shape[0] - (self.trajectory_window + 1)
             t = np.linspace(0, duration / self.mj_freq, duration)
