@@ -52,7 +52,7 @@ class TrajAviaryv3(BaseAviary):
         self.action_space = self._action_space()
         self.observation_space = self._observation_space()
 
-        self.action_buffer = np.zeros((10, 4))
+        self.action_buffer = np.zeros((4, 4))
 
     def _action_space(self):
         lower_bound = -1 * np.ones(4)
@@ -186,7 +186,7 @@ class TrajAviaryv3(BaseAviary):
         mujoco.mju_subQuat(delta_ori, quat, np.array([1.0, 0.0, 0.0, 0.0]))
 
         delta_angular_vel = np.zeros(3) - self.angular_velocity
-        delta_angular_vel += self.np_random.normal(0, 0.005, 3)
+        delta_angular_vel += self.np_random.normal(0, 0.001, 3)
 
         priv_info = self.get_dynamics_info()
 
@@ -238,7 +238,7 @@ class TrajAviaryv3(BaseAviary):
         isclose = 0.001
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
-        norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0)/self.mj_timestep)
+        norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0))
 
         distance_reward = rewards.tolerance(
             norm_position, bounds=(-isclose, isclose), margin=0.75
