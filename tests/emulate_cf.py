@@ -16,9 +16,10 @@ import matplotlib.pyplot as plt
 from adapt_drones.cfgs.config import *
 from adapt_drones.networks.agents import *
 from adapt_drones.networks.adapt_net import AdaptationNetwork
-from adapt_drones.utils.emulate import *
+from adapt_drones.utils.emulate_new import *
 from adapt_drones.utils.mpc_utils import quaternion_to_euler
 from adapt_drones.utils.dynamics import CustomDynamics
+from adapt_drones.utils.ploting import data_plot, TextonPlot
 
 
 @dataclass
@@ -52,9 +53,7 @@ def compute_obs(cf_quad: Quadrotor):
 
     state_obs = np.concatenate((delta_pos, delta_ori, delta_vel, delta_angular_vel))
 
-    window_trajectory = np.hstack(
-        [window_position, window_velocity]
-    ).flatten()
+    window_trajectory = np.hstack([window_position, window_velocity]).flatten()
 
     priv_info = np.concatenate(
         (
@@ -121,7 +120,7 @@ if __name__ == "__main__":
     cf_quad = Quadrotor(state=cf_state)
 
     best_model = True
-    idx = 2
+    idx = 0
 
     # seeding
     random.seed(args.seed)
@@ -202,6 +201,8 @@ if __name__ == "__main__":
     cf_position = []
     cf_velocity = []
     cf_quaternion = []
+    cf_ang_vel = []
+    cf_action = []
 
     action = np.zeros(4)
 
@@ -225,47 +226,82 @@ if __name__ == "__main__":
             predicited_enc=env_encoder,
         )
         action = action.cpu().detach().numpy()[0]
-        # print(action)
+        cf_action.append(action)
         cf_quad.step(action, 0.01)
         # print(cf_quad.state.pos)
         cf_position.append(cf_quad.state.pos.copy())
         cf_velocity.append(cf_quad.state.vel.copy())
         cf_quaternion.append(cf_quad.state.quat.copy())
-        # print(cf_quad.step_counter)
+        cf_ang_vel.append(cf_quad.state.omega.copy())
         # print(cf_quad.state)
-        # input()
+        # print(cf_quad.step_counter)
 
     cf_position = np.array(cf_position)
     cf_velocity = np.array(cf_velocity)
     cf_quaternion = np.array(cf_quaternion)
+    cf_ang_vel = np.array(cf_ang_vel)
+    cf_action = np.array(cf_action)
+    
+    for i in range(len(cf_action)):
+        cf_action[i] = cf_quad.pre_process_action(cf_action[i])
 
-    cf_rpy = [rpy for rpy in map(quaternion_to_euler, cf_quaternion)]
-    cf_rpy = np.array(cf_rpy)
+    ref_position = ref_trajectory[: len(t), :3]
+    ref_velocity = ref_trajectory[: len(t), 3:6]
 
-    pos_error = ref_trajectory[: len(t), :3] - cf_position
-    vel_error = ref_trajectory[: len(t), 3:6] - cf_velocity
+    plot_text = TextonPlot(
+        seed=args.seed,
+        mass=cf_quad.mass,
+        inertia=cf_quad.J,
+        wind=np.array([0, 0, 0]),
+        com=np.array([0, 0, 0]),
+        prop_const=cf_quad.prop_const,
+        arm_length=cf_quad.arm_length,
+        thrust2weight="2.75",
+        mean_error="",
+        rms_error="",
+    )
 
-    mean_error = np.mean(np.linalg.norm(pos_error, axis=1))
-    print("Mean Position Error:", mean_error)
-    mean_vel_error = np.mean(np.linalg.norm(vel_error, axis=1))
-    print("Mean Velocity Error:", mean_vel_error)
+    data_plot(
+        t,
+        cf_position,
+        ref_position,
+        cf_velocity,
+        ref_velocity,
+        cf_quaternion,
+        cf_ang_vel,
+        cf_action,
+        plot_text,
+        "cf_emulate",
+        "new_rk",
+    )
 
-    print("Max Roll Angle:", np.rad2deg(np.max(cf_rpy[:, 0])))
-    print("Max Pitch Angle:", np.rad2deg(np.max(cf_rpy[:, 1])))
+    # cf_rpy = [rpy for rpy in map(quaternion_to_euler, cf_quaternion)]
+    # cf_rpy = np.array(cf_rpy)
 
-    plt.figure()
-    plt.plot(t, cf_position[:, 0], "r", label="x")
-    plt.plot(t, cf_position[:, 1], "g", label="y")
-    plt.plot(t, cf_position[:, 2], "b", label="z")
+    # pos_error = ref_trajectory[: len(t), :3] - cf_position
+    # vel_error = ref_trajectory[: len(t), 3:6] - cf_velocity
 
-    plt.plot(t, ref_trajectory[: len(t), 0], "r--", alpha=0.75, label="x_ref")
-    plt.plot(t, ref_trajectory[: len(t), 1], "g--", alpha=0.75, label="y_ref")
-    plt.plot(t, ref_trajectory[: len(t), 2], "b--", alpha=0.75, label="z_ref")
+    # mean_error = np.mean(np.linalg.norm(pos_error, axis=1))
+    # print("Mean Position Error:", mean_error)
+    # mean_vel_error = np.mean(np.linalg.norm(vel_error, axis=1))
+    # print("Mean Velocity Error:", mean_vel_error)
 
-    plt.grid()
-    plt.title("Position")
-    plt.legend()
-    plt.show()
+    # print("Max Roll Angle:", np.rad2deg(np.max(cf_rpy[:, 0])))
+    # print("Max Pitch Angle:", np.rad2deg(np.max(cf_rpy[:, 1])))
+
+    # plt.figure()
+    # plt.plot(t, cf_position[:, 0], "r", label="x")
+    # plt.plot(t, cf_position[:, 1], "g", label="y")
+    # plt.plot(t, cf_position[:, 2], "b", label="z")
+
+    # plt.plot(t, ref_trajectory[: len(t), 0], "r--", alpha=0.75, label="x_ref")
+    # plt.plot(t, ref_trajectory[: len(t), 1], "g--", alpha=0.75, label="y_ref")
+    # plt.plot(t, ref_trajectory[: len(t), 2], "b--", alpha=0.75, label="z_ref")
+
+    # plt.grid()
+    # plt.title("Position")
+    # plt.legend()
+    # plt.show()
 
     # question: what all functions do we need to implement?
     # 1. compute_obs
