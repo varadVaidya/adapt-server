@@ -23,18 +23,9 @@ class EnvironmentalEncoder(nn.Module):
 
         # convert to nn.Sequential
         self.model = nn.Sequential(*layers)
-        
-        self.old_encoder = None
 
     def forward(self, x):
-        if self.old_encoder is None:
-            self.old_encoder = self.model(x)
-            return self.old_encoder
-
-        updated_encoder = self.model(x) + 0.1 * self.old_encoder
-        self.old_encoder = updated_encoder
-        return updated_encoder
-        
+        return self.model(x)
 
 
 class TrajectoryEncoder(nn.Module):
