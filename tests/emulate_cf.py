@@ -25,7 +25,7 @@ from adapt_drones.utils.ploting import data_plot, TextonPlot
 @dataclass
 class Args:
     env_id: str = "traj_v3"
-    run_name: str = "earthy-snowball-77"
+    run_name: str = "desert-star-119"
     seed: int = 15092024
     agent: str = "RMA_DATT"
     scale: bool = True
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     cf_quad = Quadrotor(state=cf_state)
 
     best_model = True
-    idx = 0
+    idx = 4
 
     # seeding
     random.seed(args.seed)
