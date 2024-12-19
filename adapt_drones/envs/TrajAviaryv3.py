@@ -52,7 +52,7 @@ class TrajAviaryv3(BaseAviary):
         self.action_space = self._action_space()
         self.observation_space = self._observation_space()
 
-        self.action_buffer = np.zeros((4, 4))
+        self.action_buffer = np.zeros((10, 4))
 
     def _action_space(self):
         lower_bound = -1 * np.ones(4)
@@ -238,7 +238,7 @@ class TrajAviaryv3(BaseAviary):
         isclose = 0.001
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
-        norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0))
+        norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0, n=2))
 
         distance_reward = rewards.tolerance(
             norm_position, bounds=(-isclose, isclose), margin=0.75
