@@ -8,12 +8,12 @@ class Learning:
     torch_deterministic: bool = True
     cuda: bool = True
     test: bool = False
-    total_timesteps: int = 30000000
-    init_lr: float = 2e-4
+    total_timesteps: int = 60000000
+    init_lr: float = 3e-4
     num_envs: int = 64
     num_steps: int = 1024
     anneal_lr: bool = True
-    final_lr: float = 1.74e-4
+    final_lr: float = 2.74e-4
     gamma: float = 0.99
     gae_lambda: float = 0.95
     num_minibatches: int = 64
