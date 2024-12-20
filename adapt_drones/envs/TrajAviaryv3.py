@@ -269,7 +269,7 @@ class TrajAviaryv3(BaseAviary):
         )
 
         # weights = np.array([0.50, 0.15, 0.15, 0.15, 0.05])
-        weights = np.array([0.50, 0.15, 0.2, 0.1, 0.05])
+        weights = np.array([0.45, 0.15, 0.2, 0.1, 0.05, 0.05])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
@@ -278,6 +278,7 @@ class TrajAviaryv3(BaseAviary):
                 velocity_reward,
                 angular_velocity_reward,
                 action_reward,
+                yaw_reward,
             ]
         )
         crash_reward = -100.0 if len(self.data.contact.dim) > 0 else 0.0
