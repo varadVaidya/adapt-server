@@ -262,6 +262,12 @@ class TrajAviaryv3(BaseAviary):
             margin=margin,
         )
 
+        yaw_reward = rewards.tolerance(
+            np.abs(rotation.mat2euler(rotation.q_to_rot_mat(self.quat))[2]),
+            bounds=(-isclose, isclose),
+            margin=margin,
+        )
+
         # weights = np.array([0.50, 0.15, 0.15, 0.15, 0.05])
         weights = np.array([0.50, 0.15, 0.2, 0.1, 0.05])
         weights = weights / np.sum(weights)
@@ -280,6 +286,10 @@ class TrajAviaryv3(BaseAviary):
 
         self.info_reward["distance_reward"] += distance_reward
         self.info_reward["velocity_reward"] += velocity_reward
+        self.info_reward["close_distance_reward"] += close_distance_reward
+        self.info_reward["action_reward"] += action_reward
+        self.info_reward["angular_velocity_reward"] += angular_velocity_reward
+        self.info_reward["yaw_reward"] += yaw_reward
 
         return np.float32(reward)
 
@@ -530,6 +540,10 @@ class TrajAviaryv3(BaseAviary):
         self.info_reward = {
             "distance_reward": 0.0,
             "velocity_reward": 0.0,
+            "close_distance_reward": 0.0,
+            "action_reward": 0.0,
+            "angular_velocity_reward": 0.0,
+            "yaw_reward": 0.0,
         }
 
     def init_render(self):

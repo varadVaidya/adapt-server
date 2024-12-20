@@ -5,6 +5,32 @@ _FLOAT_EPS = np.finfo(np.float64).eps
 _EPS4 = _FLOAT_EPS * 4.0
 
 
+def q_to_rot_mat(q):
+    qw, qx, qy, qz = q[0], q[1], q[2], q[3]
+
+    if isinstance(q, np.ndarray):
+        rot_mat = np.array(
+            [
+                [
+                    1 - 2 * (qy**2 + qz**2),
+                    2 * (qx * qy - qw * qz),
+                    2 * (qx * qz + qw * qy),
+                ],
+                [
+                    2 * (qx * qy + qw * qz),
+                    1 - 2 * (qx**2 + qz**2),
+                    2 * (qy * qz - qw * qx),
+                ],
+                [
+                    2 * (qx * qz - qw * qy),
+                    2 * (qy * qz + qw * qx),
+                    1 - 2 * (qx**2 + qy**2),
+                ],
+            ]
+        )
+        return rot_mat
+
+
 @jit(nopython=True)
 def mat2euler(mat):
     """Convert Rotation Matrix to Euler Angles.  See rotation.py for notes"""

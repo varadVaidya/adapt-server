@@ -41,7 +41,8 @@ def ppo_train(args: Config, envs):
                     "rewards/velocity",
                     "rewards/yaw",
                     "rewards/control",
-                    "rewards/crash",
+                    "rewards/angular_velocity",
+                    "rewards/close_distance",
                 ],
             ],
         },
@@ -212,6 +213,23 @@ def ppo_train(args: Config, envs):
                             writer.add_scalar(
                                 "rewards/velocity", info["velocity_reward"], global_step
                             )
+                            writer.add_scalar(
+                                "rewards/yaw", info["yaw_reward"], global_step
+                            )
+                            writer.add_scalar(
+                                "rewards/control", info["action_reward"], global_step
+                            )
+                            writer.add_scalar(
+                                "rewards/angular_velocity",
+                                info["angular_velocity_reward"],
+                                global_step,
+                            )
+                            writer.add_scalar(
+                                "rewards/close_distance",
+                                info["close_distance_reward"],
+                                global_step,
+                            )
+
                             plot_once_iter = False
 
         # bootstrap value if not done
