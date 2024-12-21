@@ -4,7 +4,7 @@
 MEMORY_THRESHOLD_MB=5000
 
 # Python script to execute
-PYTHON_SCRIPT="adapt_drones/train.py --env_id traj_v3"
+PYTHON_SCRIPT="adapt_drones/train.py"
 
 # Function to get available memory in MB
 get_available_memory() {
@@ -19,11 +19,11 @@ while true; do
     echo "Available memory: ${available_memory} MB"
 
     if (( available_memory > MEMORY_THRESHOLD_MB )); then
-        echo "Threshold met. Running ${PYTHON_SCRIPT}"
-        python "$PYTHON_SCRIPT"
+        echo "Threshold met. Running ${PYTHON_SCRIPT} with arguments: $*"
+        python3 "$PYTHON_SCRIPT" "$@"
         break
     fi
 
     # Wait for a few seconds before checking again
-    sleep 60
+    sleep 5
 done
