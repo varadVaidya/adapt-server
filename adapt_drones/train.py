@@ -103,7 +103,7 @@ envs = gym.vector.SyncVectorEnv(
         for _ in range(adapt_cfg.learning.num_envs)
     ]
 )
-adapt_train_datt_rma(adapt_cfg, envs)
+adapt_train_datt_rma(adapt_cfg, envs, best_model= False)
 
 with open(
     "runs/"
