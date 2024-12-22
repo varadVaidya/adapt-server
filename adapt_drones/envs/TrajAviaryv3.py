@@ -52,7 +52,7 @@ class TrajAviaryv3(BaseAviary):
         self.action_space = self._action_space()
         self.observation_space = self._observation_space()
 
-        self.action_buffer = np.zeros((4, 4))
+        self.action_buffer = np.zeros((2, 4))
 
     def _action_space(self):
         lower_bound = -1 * np.ones(4)
