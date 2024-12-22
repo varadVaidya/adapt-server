@@ -242,7 +242,9 @@ class TrajAviaryv3(BaseAviary):
         isclose = 0.001
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
-        norm_angular_velocity = np.linalg.norm(self.target_angular_velocity - self.angular_velocity)
+        norm_angular_velocity = np.linalg.norm(
+            self.target_angular_velocity - self.angular_velocity
+        )
         norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0))
 
         distance_reward = rewards.tolerance(
@@ -274,7 +276,8 @@ class TrajAviaryv3(BaseAviary):
         )
 
         # weights = np.array([0.50, 0.15, 0.15, 0.15, 0.05])
-        weights = np.array([0.55, 0.175, 0.2, 0.025, 0.025, 0.025])
+        # weights = np.array([0.55, 0.175, 0.2, 0.025, 0.025, 0.025])
+        weights = np.array([0.50, 0.15, 0.2, 0.1, 0.025, 0.025])
         weights = weights / np.sum(weights)
         reward_vector = np.array(
             [
