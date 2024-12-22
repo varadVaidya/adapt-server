@@ -166,12 +166,14 @@ class TrajAviaryv3(BaseAviary):
 
         trajectory_window = self.get_trajectory_window()
 
-        assert trajectory_window.shape == (self.trajectory_window, 6)
+        assert trajectory_window.shape == (self.trajectory_window, 13)
         window_position = trajectory_window[:, 0:3] - self.position
         window_velocity = trajectory_window[:, 3:6] - self.velocity
 
         self.target_position = trajectory_window[0, 0:3]
         self.target_velocity = trajectory_window[0, 3:6]
+        self.target_quat = trajectory_window[0, 6:10]
+        self.target_angular_velocity = trajectory_window[0, 10:13]
 
         delta_pos = self.target_position - self.position
         delta_vel = self.target_velocity - self.velocity
@@ -211,9 +213,11 @@ class TrajAviaryv3(BaseAviary):
 
         start_idx = self.step_counter
         end_idx = start_idx + self.trajectory_window
-        return self.reference_trajectory[start_idx:end_idx, 1:7]
+        return self.reference_trajectory[start_idx:end_idx, 1:]
 
     def reference_trajectory_reset(self):
+        # reference trajectory headers:
+        # "time,p_x,p_y,p_z,v_x,v_y,v_z,q_w,q_x,q_y,q_z,w_x,w_y,w_z"
         traj_index = self.np_random.integers(0, self.trajectory_dataset.shape[0])
         return self.trajectory_dataset[traj_index]
 
@@ -238,6 +242,7 @@ class TrajAviaryv3(BaseAviary):
         isclose = 0.001
         norm_position = np.linalg.norm(self.target_position - self.position)
         norm_velocity = np.linalg.norm(self.target_velocity - self.velocity)
+        norm_angular_velocity = np.linalg.norm(self.target_angular_velocity - self.angular_velocity)
         norm_action = np.linalg.norm(np.diff(self.action_buffer, axis=0))
 
         distance_reward = rewards.tolerance(
@@ -257,7 +262,7 @@ class TrajAviaryv3(BaseAviary):
         )
 
         angular_velocity_reward = rewards.tolerance(
-            np.linalg.norm(self.angular_velocity),
+            norm_angular_velocity,
             bounds=(-isclose, isclose),
             margin=margin,
         )
