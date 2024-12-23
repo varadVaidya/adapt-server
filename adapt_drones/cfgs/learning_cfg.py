@@ -21,7 +21,7 @@ class Learning:
 
     update_epochs: int = 10
     norm_adv: bool = True
-    clip_coef: float = 0.2
+    clip_coef: float = 0.3
     clip_vloss: bool = False
     ent_coef: float = 0.0005
     vf_coef: float = 0.5
