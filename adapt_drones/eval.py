@@ -27,6 +27,7 @@ class Args:
     scale: bool = True
     idx: Union[int, None] = None
     wind_bool: bool = True
+    best_model: bool = True
 
 
 args = tyro.cli(Args)
@@ -48,14 +49,16 @@ current_branch_name = (
 print("Current branch name:", current_branch_name)
 branch_name = "runs/" + cfg.experiment.grp_name + "/" + args.run_name
 
+print("Using best model" if args.best_model else "Using last model")
+
 # checkout to the run tag
-subprocess.check_output(["git", "checkout", branch_name])
+# subprocess.check_output(["git", "checkout", branch_name])
 
 # phase 1 eval
-phase1_eval(cfg=cfg, best_model=True, idx=args.idx)
+phase1_eval(cfg=cfg, best_model=args.best_model, idx=args.idx)
 
 # rma eval
-RMA_DATT_eval(cfg=cfg, best_model=True, idx=args.idx)
+RMA_DATT_eval(cfg=cfg, best_model=args.best_model, idx=args.idx)
 
 # return to the original branch
-subprocess.check_output(["git", "checkout", current_branch_name])
+# subprocess.check_output(["git", "checkout", current_branch_name])
